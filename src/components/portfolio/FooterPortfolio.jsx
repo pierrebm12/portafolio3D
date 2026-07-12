@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { HiHeart } from 'react-icons/hi'
 import { FaInstagram, FaFacebook, FaWhatsapp, FaLinkedin } from 'react-icons/fa'
 
 export default function FooterPortfolio() {
@@ -12,7 +11,7 @@ export default function FooterPortfolio() {
             <span className="text-2xl font-['Anton',sans-serif] tracking-wider text-[#F5EDD6]">DEV<span className="text-[#F97316]">TRO</span></span>
             <p className="mt-4 text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] max-w-sm leading-relaxed">Desarrollo, diseño y marketing todo en un solo lugar. Transformamos tu negocio digital con soluciones integrales que generan resultados reales.</p>
             <div className="flex gap-3 mt-6">
-              {[{ icon: FaInstagram, href: '#', label: 'Instagram' }, { icon: FaFacebook, href: '#', label: 'Facebook' }, { icon: FaWhatsapp, href: '#', label: 'WhatsApp' }, { icon: FaLinkedin, href: '#', label: 'LinkedIn' }].map(({ icon: Icon, href, label }) => (
+              {[{ icon: FaInstagram, href: 'https://www.instagram.com/soypierrebm_/', label: 'Instagram' }, { icon: FaFacebook, href: 'https://web.facebook.com/jeanpierre.buitrago.1?locale=es_LA', label: 'Facebook' }, { icon: FaWhatsapp, href: 'https://wa.me/573138307231', label: 'WhatsApp' }, { icon: FaLinkedin, href: '#', label: 'LinkedIn' }].map(({ icon: Icon, href, label }) => (
                 <a key={label} href={href} aria-label={label}
                   className="w-10 h-10 rounded-full border border-[#F97316]/20 flex items-center justify-center text-[#A3A3A3] hover:text-[#F97316] hover:border-[#F97316] hover:bg-[#F97316]/5 transition-all duration-300">
                   <Icon size={16} />
@@ -31,9 +30,9 @@ export default function FooterPortfolio() {
           <div>
             <h4 className="text-sm font-['DM_Sans',sans-serif] font-semibold text-[#F5EDD6] uppercase tracking-wider mb-4">Contacto</h4>
             <ul className="space-y-3">
-              <li><a href="mailto:hola@devtro.com" className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] hover:text-[#F97316] transition-colors">hola@devtro.com</a></li>
-              <li><a href="#" className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] hover:text-[#F97316] transition-colors">+1 (555) 000-0000</a></li>
-              <li><a href="#" className="inline-flex items-center gap-2 text-sm font-['DM_Sans',sans-serif] text-[#F97316] hover:text-[#EA580C] transition-colors font-medium"><FaWhatsapp size={14} /> WhatsApp</a></li>
+              <li><a href="mailto:infodevtro@gmail.com" className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] hover:text-[#F97316] transition-colors">infodevtro@gmail.com</a></li>
+              <li><a href="tel:+573138307231" className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] hover:text-[#F97316] transition-colors">+57 313 830 7231</a></li>
+              <li><a href="https://wa.me/573138307231" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-['DM_Sans',sans-serif] text-[#F97316] hover:text-[#EA580C] transition-colors font-medium"><FaWhatsapp size={14} /> WhatsApp</a></li>
             </ul>
           </div>
         </div>

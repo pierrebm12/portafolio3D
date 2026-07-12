@@ -1,5 +1,5 @@
-import { useRef, useMemo } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { useRef, useMemo, useEffect } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { AdaptiveDpr, Text } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
@@ -27,6 +27,9 @@ const LINE_VISIBLE_DURATION = 3.0
 const LINE_FADE_DURATION = 0.8
 const LINE_OFF_DURATION = 2.0
 const LINE_CYCLE = LINE_VISIBLE_DURATION + LINE_OFF_DURATION + LINE_FADE_DURATION * 2
+const DRAG_DECAY = 0.92
+
+const _v3 = new THREE.Vector3()
 
 function getLineOpacity(t, phase) {
   const cycleT = ((t + phase) % LINE_CYCLE + LINE_CYCLE) % LINE_CYCLE
@@ -52,11 +55,16 @@ function updateLine(line, posA, posB, opacity) {
 }
 
 function Universe() {
+  const { camera, pointer } = useThree()
   const groupRef = useRef()
   const lineRefs = useRef([])
   const labelGroupRefs = useRef([])
   const internalLineRefs = useRef(projects.map(() => []))
   const nodeRefs = useRef({})
+  const meshRefs = useRef({})
+  const dragOffsets = useRef({})
+  const grabbed = useRef(null)
+  const lastPointer = useRef(new THREE.Vector2())
 
   const initialPositions = useMemo(() =>
     projects.map((_, ci) => {
@@ -105,8 +113,41 @@ function Universe() {
 
   const lineCount = possibleConnections.length
 
+  const handlePointerDown = (ci, si) => (e) => {
+    e.stopPropagation()
+    grabbed.current = { ci, si }
+    lastPointer.current.copy(pointer)
+    const key = `${ci}-${si}`
+    if (!dragOffsets.current[key]) dragOffsets.current[key] = new THREE.Vector3()
+    document.body.style.cursor = 'grabbing'
+  }
+
+  const handlePointerUp = () => {
+    grabbed.current = null
+    document.body.style.cursor = ''
+  }
+
+  useEffect(() => {
+    window.addEventListener('pointerup', handlePointerUp)
+    return () => window.removeEventListener('pointerup', handlePointerUp)
+  }, [])
+
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05), t = state.clock.elapsedTime
+
+    if (grabbed.current) {
+      const dx = (pointer.x - lastPointer.current.x) * 4
+      const dy = (pointer.y - lastPointer.current.y) * 4
+      lastPointer.current.copy(pointer)
+      _v3.set(dx, dy, 0).applyQuaternion(camera.quaternion)
+      _v3.z = 0
+      const key = `${grabbed.current.ci}-${grabbed.current.si}`
+      const off = dragOffsets.current[key]
+      if (off) {
+        off.x += _v3.x * dt * 8
+        off.y += _v3.y * dt * 8
+      }
+    }
 
     clusterData.forEach((cd, ci) => {
       cd.cx += Math.sin(t * 0.05 + ci * 1.1) * 0.0015
@@ -132,6 +173,19 @@ function Universe() {
       }
     }
 
+    for (const key in dragOffsets.current) {
+      if (grabbed.current && key === `${grabbed.current.ci}-${grabbed.current.si}`) continue
+      const off = dragOffsets.current[key]
+      if (off) {
+        off.x *= DRAG_DECAY
+        off.y *= DRAG_DECAY
+        off.z *= DRAG_DECAY
+        if (Math.abs(off.x) < 0.0001 && Math.abs(off.y) < 0.0001 && Math.abs(off.z) < 0.0001) {
+          off.set(0, 0, 0)
+        }
+      }
+    }
+
     const internalLineVisCount = { current: 0 }
 
     clusterData.forEach((cd, ci) => {
@@ -144,9 +198,16 @@ function Universe() {
         const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
         const ly = Math.cos(o.phi) * r * 0.5 + Math.sin(t * 0.12 + o.osc) * 0.06
         const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
-        cd.worldPositions[si].set(cd.cx + lx, cd.cy + ly, cd.cz + lz)
+
+        const key = `${ci}-${si}`
+        const doff = dragOffsets.current[key]
+        const fx = doff ? doff.x : 0
+        const fy = doff ? doff.y : 0
+        const fz = doff ? doff.z : 0
+
+        cd.worldPositions[si].set(cd.cx + lx + fx, cd.cy + ly + fy, cd.cz + lz + fz)
         const nodeGroup = nodeRefs.current[`${ci}-${si}`]
-        if (nodeGroup) nodeGroup.position.set(lx, ly, lz)
+        if (nodeGroup) nodeGroup.position.set(lx + fx, ly + fy, lz + fz)
       })
 
       const phases = internalPhases[ci]
@@ -197,15 +258,22 @@ function Universe() {
     <group ref={groupRef}>
       {clusterData.map((cd, ci) => (
         <group key={ci}>
-          {cd.proj.skills.map((skill, si) => (
-            <group key={si} ref={(el) => { if (el) nodeRefs.current[`${ci}-${si}`] = el }}>
-              <mesh>
-                <sphereGeometry args={[PARTICLE_RADIUS, 16, 16]} />
-                <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.6} metalness={0.3} roughness={0.2} />
-              </mesh>
-              <Text position={[0, -0.18, 0]} fontSize={0.05} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.7}>{skill}</Text>
-            </group>
-          ))}
+          {cd.proj.skills.map((skill, si) => {
+            const key = `${ci}-${si}`
+            return (
+              <group key={si} ref={(el) => { if (el) nodeRefs.current[`${ci}-${si}`] = el }}>
+                <mesh
+                  ref={(el) => { if (el) meshRefs.current[key] = el }}
+                  onPointerDown={handlePointerDown(ci, si)}
+                  style={{ cursor: 'grab' }}
+                >
+                  <sphereGeometry args={[PARTICLE_RADIUS, 16, 16]} />
+                  <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.6} metalness={0.3} roughness={0.2} />
+                </mesh>
+                <Text position={[0, -0.18, 0]} fontSize={0.05} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.7}>{skill}</Text>
+              </group>
+            )
+          })}
           <group position={[0, -1.3, 0]}>
             <Text fontSize={0.08} color={cd.proj.color} anchorX="center" anchorY="top" fontWeight={700}>{cd.proj.name}</Text>
           </group>

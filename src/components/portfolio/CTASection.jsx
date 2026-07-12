@@ -78,7 +78,7 @@ export default function CTASection() {
             <div className="bg-[#121212] border border-[#F97316]/10 rounded-2xl p-6 sm:p-8">
               <h3 className="text-lg font-['DM_Sans',sans-serif] font-semibold text-[#F5EDD6] mb-4">¿Prefieres contacto directo?</h3>
               <p className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] mb-4">Escríbenos por WhatsApp y te responderemos en menos de 1 hora</p>
-              <a href="#" className="inline-flex items-center gap-2 px-6 py-3 bg-[#121212] border border-[#F97316]/30 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium rounded-full hover:bg-[#F97316] hover:text-[#0A0A0A] hover:border-[#F97316] transition-all duration-300">
+              <a href="https://wa.me/573138307231" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-[#121212] border border-[#F97316]/30 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium rounded-full hover:bg-[#F97316] hover:text-[#0A0A0A] hover:border-[#F97316] transition-all duration-300">
                 <HiChat size={18} /> WhatsApp Directo
               </a>
             </div>
