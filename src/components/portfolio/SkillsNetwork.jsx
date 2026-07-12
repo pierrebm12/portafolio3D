@@ -1,7 +1,6 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { AdaptiveDpr, Text } from '@react-three/drei'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
 
@@ -311,7 +310,7 @@ function Universe() {
 
 function SkyDome() {
   const ref = useRef()
-  const count = 1200
+  const count = 600
   const pos = useMemo(() => {
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -337,8 +336,8 @@ export default function SkillsNetwork() {
   return (
     <Canvas
       camera={{ position: [0, 0.3, 6.5], fov: 50, near: 0.1, far: 30 }}
-      dpr={[0.8, 1.2]}
-      gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+      dpr={[0.5, 0.8]}
+      gl={{ alpha: true, antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
       style={{ background: 'transparent', width: '100%', height: '100%' }}
     >
       <Suspense fallback={null}>
@@ -347,9 +346,6 @@ export default function SkillsNetwork() {
         <directionalLight position={[-2, -1, -2]} intensity={0.2} color="#F5EDD6" />
         <SkyDome />
         <Universe />
-        <EffectComposer>
-          <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />
-        </EffectComposer>
         <AdaptiveDpr pixelated />
       </Suspense>
     </Canvas>

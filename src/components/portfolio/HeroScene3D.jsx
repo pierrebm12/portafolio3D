@@ -1,13 +1,12 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { AdaptiveDpr } from '@react-three/drei'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
 
 function StarField() {
   const ref = useRef()
-  const count = 1500
+  const count = 800
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -36,7 +35,7 @@ function StarField() {
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
         <bufferAttribute attach="attributes-size" count={count} array={sizes} itemSize={1} />
       </bufferGeometry>
-      <pointsMaterial size={0.06} color="#F5EDD6" transparent opacity={0.6} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
+      <pointsMaterial size={0.06} color="#F5EDD6" transparent opacity={0.5} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
     </points>
   )
 }
@@ -172,7 +171,7 @@ function Sun() {
         <meshBasicMaterial color="#F97316" transparent opacity={0.15} />
       </mesh>
       <mesh ref={meshRef} scale={1.2}>
-        <torusKnotGeometry args={[0.5, 0.2, 128, 16]} />
+        <torusKnotGeometry args={[0.5, 0.2, 48, 8]} />
         <meshStandardMaterial
           color="#F97316" emissive="#EA580C" emissiveIntensity={0.8}
           metalness={0.9} roughness={0.1} envMapIntensity={2.5}
@@ -227,8 +226,8 @@ export default function HeroScene3D({ mouse, scroll }) {
     <div className="absolute inset-0 z-0">
       <Canvas
         camera={{ position: [0, 1.5, 7], fov: 50, near: 0.1, far: 40 }}
-        dpr={[0.8, 1.2]}
-        gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.5 }}
+        dpr={[0.5, 0.8]}
+        gl={{ alpha: true, antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.5, powerPreference: 'high-performance' }}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
@@ -237,9 +236,6 @@ export default function HeroScene3D({ mouse, scroll }) {
           <directionalLight position={[-2, 1, -1]} intensity={0.25} color="#F5EDD6" />
           <pointLight position={[0, 0, 0]} intensity={2} color="#F97316" distance={15} decay={1.2} />
           <Universe mouse={mouse} />
-          <EffectComposer>
-            <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.92} intensity={1.2} mipmapBlur />
-          </EffectComposer>
           <AdaptiveDpr pixelated />
         </Suspense>
       </Canvas>
