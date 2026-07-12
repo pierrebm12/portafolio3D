@@ -28,17 +28,22 @@ function Universe() {
   const labelGroupRefs = useRef([])
   const nodeRefs = useRef({})
 
+  const initialPositions = useMemo(() =>
+    projects.map((_, ci) => {
+      const angle = (ci / projects.length) * Math.PI * 2 - Math.PI / 2
+      return { x: Math.cos(angle) * 3.2, y: Math.sin(angle * 2) * 0.5, z: Math.sin(angle) * 1.2 }
+    }), [])
+
   const clusterData = useMemo(() => {
     return projects.map((proj, ci) => {
-      const angle = (ci / projects.length) * Math.PI * 2 - Math.PI / 2
-      const cx = Math.cos(angle) * 3.2, cy = Math.sin(angle * 2) * 0.5, cz = Math.sin(angle) * 1.2
+      const ip = initialPositions[ci]
       const orbit = proj.skills.map(() => ({
         theta: Math.random() * Math.PI * 2, phi: Math.acos(2 * Math.random() - 1),
-        speed: 0.3 + Math.random() * 0.4, osc: Math.random() * Math.PI * 2,
+        speed: 0.08 + Math.random() * 0.12, osc: Math.random() * Math.PI * 2,
       }))
-      return { proj, cx, cy, cz, orbit, worldPositions: proj.skills.map(() => new THREE.Vector3()) }
+      return { proj, cx: ip.x, cy: ip.y, cz: ip.z, orbit, worldPositions: proj.skills.map(() => new THREE.Vector3()) }
     })
-  }, [])
+  }, [initialPositions])
 
   const possibleConnections = useMemo(() => {
     const conns = []
@@ -59,9 +64,13 @@ function Universe() {
     const dt = Math.min(delta, 0.05), t = state.clock.elapsedTime
 
     clusterData.forEach((cd, ci) => {
-      cd.cx += Math.sin(t * 0.08 + ci * 1.1) * 0.004
-      cd.cy += Math.cos(t * 0.1 + ci * 0.7) * 0.004
-      cd.cz += Math.sin(t * 0.06 + ci * 1.3) * 0.004
+      cd.cx += Math.sin(t * 0.05 + ci * 1.1) * 0.0015
+      cd.cy += Math.cos(t * 0.06 + ci * 0.7) * 0.0015
+      cd.cz += Math.sin(t * 0.04 + ci * 1.3) * 0.0015
+      const ip = initialPositions[ci]
+      cd.cx += (ip.x - cd.cx) * 0.003
+      cd.cy += (ip.y - cd.cy) * 0.003
+      cd.cz += (ip.z - cd.cz) * 0.003
     })
 
     for (let i = 0; i < clusterData.length; i++) {
@@ -69,9 +78,9 @@ function Universe() {
         const a = clusterData[i], b = clusterData[j]
         const dx = a.cx - b.cx, dy = a.cy - b.cy, dz = a.cz - b.cz
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
-        const minDist = 2.8
+        const minDist = 2.5
         if (dist < minDist && dist > 0.001) {
-          const force = (minDist - dist) / minDist * 0.01, invDist = 1 / dist
+          const force = (minDist - dist) / minDist * 0.005, invDist = 1 / dist
           a.cx += dx * invDist * force; a.cy += dy * invDist * force; a.cz += dz * invDist * force
           b.cx -= dx * invDist * force; b.cy -= dy * invDist * force; b.cz -= dz * invDist * force
         }
@@ -84,9 +93,9 @@ function Universe() {
       cd.proj.skills.forEach((_, si) => {
         const o = cd.orbit[si]
         o.theta += dt * o.speed; o.phi += dt * o.speed * 0.3
-        const r = 1.0 + Math.sin(t * 0.25 + o.osc) * 0.15
+        const r = 1.0 + Math.sin(t * 0.2 + o.osc) * 0.08
         const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
-        const ly = Math.cos(o.phi) * r * 0.5 + Math.sin(t * 0.15 + o.osc) * 0.1
+        const ly = Math.cos(o.phi) * r * 0.5 + Math.sin(t * 0.12 + o.osc) * 0.06
         const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
         cd.worldPositions[si].set(cd.cx + lx, cd.cy + ly, cd.cz + lz)
         const nodeGroup = nodeRefs.current[`${ci}-${si}`]
@@ -100,20 +109,20 @@ function Universe() {
       const posA = clusterData[conn.ci].worldPositions[conn.si]
       const posB = clusterData[conn.cj].worldPositions[conn.sj]
       const dist = posA.distanceTo(posB)
-      if (dist < 2.2 && idx < refs.length) {
+      if (dist < 2.5 && idx < refs.length) {
         const line = refs[idx]
         if (line) {
           const arr = line.geometry.attributes.position.array
           arr[0] = posA.x; arr[1] = posA.y; arr[2] = posA.z
           arr[3] = posB.x; arr[4] = posB.y; arr[5] = posB.z
           line.geometry.attributes.position.needsUpdate = true
-          const op = Math.max(0.05, (1 - dist / 2.2) * 0.6) * (0.3 + Math.sin(t * 0.8 + conn.phase) * 0.2)
+          const op = Math.max(0.05, (1 - dist / 2.5) * 0.7) * (0.4 + Math.sin(t * 0.6 + conn.phase) * 0.2)
           line.material.opacity = op; line.visible = true
         }
         const g = lg[idx]
         if (g) {
           g.position.set((posA.x + posB.x) / 2, (posA.y + posB.y) / 2 + 0.18, (posA.z + posB.z) / 2)
-          const intensity = Math.max(0, (1 - dist / 2.2))
+          const intensity = Math.max(0, (1 - dist / 2.5))
           g.scale.setScalar(0.5 + intensity * 0.5)
           g.visible = true
         }
@@ -133,10 +142,10 @@ function Universe() {
           {cd.proj.skills.map((skill, si) => (
             <group key={si} ref={(el) => { if (el) nodeRefs.current[`${ci}-${si}`] = el }}>
               <mesh>
-                <sphereGeometry args={[0.09, 16, 16]} />
+                <sphereGeometry args={[0.1, 16, 16]} />
                 <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.6} metalness={0.3} roughness={0.2} />
               </mesh>
-              <Text position={[0, -0.16, 0]} fontSize={0.045} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.6}>{skill}</Text>
+              <Text position={[0, -0.18, 0]} fontSize={0.05} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.7}>{skill}</Text>
             </group>
           ))}
           <group position={[0, -1.3, 0]}>
@@ -154,7 +163,7 @@ function Universe() {
             <lineBasicMaterial color="#F97316" transparent opacity={0} />
           </line>
           <group ref={(el) => { if (el) labelGroupRefs.current[i] = el }} visible={false}>
-            <Text fontSize={0.055} color="#F97316" anchorX="center" anchorY="middle" fontWeight={700}>
+            <Text fontSize={0.06} color="#F97316" anchorX="center" anchorY="middle" fontWeight={700}>
               {possibleConnections[i].projectType}
             </Text>
           </group>
@@ -170,20 +179,20 @@ function SkyDome() {
   const pos = useMemo(() => {
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
-      const r = 12 + Math.random() * 18, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1)
+      const r = 10 + Math.random() * 15, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1)
       p[i * 3] = r * Math.sin(phi) * Math.cos(theta)
       p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
       p[i * 3 + 2] = r * Math.cos(phi)
     }
     return p
   }, [])
-  useFrame((_, delta) => { if (ref.current) ref.current.rotation.y += delta * 0.003 })
+  useFrame((_, delta) => { if (ref.current) ref.current.rotation.y += delta * 0.002 })
   return (
     <points ref={ref}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={pos} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.05} color="#F5EDD6" transparent opacity={0.25} sizeAttenuation />
+      <pointsMaterial size={0.04} color="#F5EDD6" transparent opacity={0.2} sizeAttenuation />
     </points>
   )
 }
@@ -191,7 +200,7 @@ function SkyDome() {
 export default function SkillsNetwork() {
   return (
     <Canvas
-      camera={{ position: [0, 0.3, 6], fov: 50, near: 0.1, far: 30 }}
+      camera={{ position: [0, 0.3, 6.5], fov: 50, near: 0.1, far: 30 }}
       dpr={[0.8, 1.2]}
       gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       style={{ background: 'transparent', width: '100%', height: '100%' }}
