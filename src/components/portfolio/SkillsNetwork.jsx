@@ -1,8 +1,10 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { AdaptiveDpr, Text } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
+import { useDevice } from '../../utils/useDevice'
 
 const projects = [
   { name: 'E-Shop Pro', color: '#F97316', skills: ['React', 'Node.js', 'Express', 'MySQL', 'CSS', 'HTML', 'Stripe', 'Redux'] },
@@ -64,6 +66,7 @@ function Universe() {
   const dragOffsets = useRef({})
   const grabbed = useRef(null)
   const lastPointer = useRef(new THREE.Vector2())
+  const { isMobile } = useDevice()
 
   const initialPositions = useMemo(() =>
     projects.map((_, ci) => {
@@ -185,8 +188,6 @@ function Universe() {
       }
     }
 
-    const internalLineVisCount = { current: 0 }
-
     clusterData.forEach((cd, ci) => {
       const childGroup = groupRef.current?.children[ci]
       if (childGroup) childGroup.position.set(cd.cx, cd.cy, cd.cz)
@@ -219,7 +220,6 @@ function Universe() {
         const posB = cd.worldPositions[pair.sj]
         const opacity = getLineOpacity(t, phases[li])
         updateLine(line, posA, posB, opacity * 0.5)
-        if (opacity > 0.01) internalLineVisCount.current++
       })
     })
 
@@ -253,6 +253,8 @@ function Universe() {
     }
   })
 
+  const sphereSegs = isMobile ? 16 : 24
+
   return (
     <group ref={groupRef}>
       {clusterData.map((cd, ci) => (
@@ -266,7 +268,7 @@ function Universe() {
                   onPointerDown={handlePointerDown(ci, si)}
                   style={{ cursor: 'grab' }}
                 >
-                  <sphereGeometry args={[PARTICLE_RADIUS, 16, 16]} />
+                  <sphereGeometry args={[PARTICLE_RADIUS, sphereSegs, sphereSegs]} />
                   <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.6} metalness={0.3} roughness={0.2} />
                 </mesh>
                 <Text position={[0, -0.18, 0]} fontSize={0.05} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.7}>{skill}</Text>
@@ -310,7 +312,8 @@ function Universe() {
 
 function SkyDome() {
   const ref = useRef()
-  const count = 600
+  const { isMobile } = useDevice()
+  const count = isMobile ? 400 : 1200
   const pos = useMemo(() => {
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -320,7 +323,7 @@ function SkyDome() {
       p[i * 3 + 2] = r * Math.cos(phi)
     }
     return p
-  }, [])
+  }, [count])
   useFrame((_, delta) => { if (ref.current) ref.current.rotation.y += delta * 0.002 })
   return (
     <points ref={ref}>
@@ -333,11 +336,19 @@ function SkyDome() {
 }
 
 export default function SkillsNetwork() {
+  const { isMobile } = useDevice()
+
   return (
     <Canvas
       camera={{ position: [0, 0.3, 6.5], fov: 50, near: 0.1, far: 30 }}
-      dpr={[0.5, 0.8]}
-      gl={{ alpha: true, antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
+      dpr={isMobile ? [0.6, 1.0] : [1, 1.5]}
+      gl={{
+        alpha: true,
+        antialias: !isMobile,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.2,
+        powerPreference: 'high-performance',
+      }}
       style={{ background: 'transparent', width: '100%', height: '100%' }}
     >
       <Suspense fallback={null}>
@@ -346,6 +357,11 @@ export default function SkillsNetwork() {
         <directionalLight position={[-2, -1, -2]} intensity={0.2} color="#F5EDD6" />
         <SkyDome />
         <Universe />
+        {!isMobile && (
+          <EffectComposer>
+            <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />
+          </EffectComposer>
+        )}
         <AdaptiveDpr pixelated />
       </Suspense>
     </Canvas>

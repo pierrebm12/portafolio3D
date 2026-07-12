@@ -1,12 +1,15 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { AdaptiveDpr } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
+import { useDevice } from '../../utils/useDevice'
 
 function StarField() {
   const ref = useRef()
-  const count = 800
+  const { isMobile } = useDevice()
+  const count = isMobile ? 600 : 1500
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -18,12 +21,12 @@ function StarField() {
       p[i * 3 + 2] = r * Math.cos(phi)
     }
     return p
-  }, [])
+  }, [count])
   const sizes = useMemo(() => {
     const s = new Float32Array(count)
     for (let i = 0; i < count; i++) s[i] = 0.02 + Math.random() * 0.08
     return s
-  }, [])
+  }, [count])
 
   useFrame((_, delta) => {
     if (ref.current) ref.current.rotation.y += delta * 0.005
@@ -35,14 +38,15 @@ function StarField() {
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
         <bufferAttribute attach="attributes-size" count={count} array={sizes} itemSize={1} />
       </bufferGeometry>
-      <pointsMaterial size={0.06} color="#F5EDD6" transparent opacity={0.5} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
+      <pointsMaterial size={0.06} color="#F5EDD6" transparent opacity={isMobile ? 0.4 : 0.6} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
     </points>
   )
 }
 
 function FloatingParticles() {
   const ref = useRef()
-  const count = 200
+  const { isMobile } = useDevice()
+  const count = isMobile ? 80 : 200
   const [positions, velocities] = useMemo(() => {
     const p = new Float32Array(count * 3)
     const v = new Float32Array(count * 3)
@@ -55,7 +59,7 @@ function FloatingParticles() {
       v[i * 3 + 2] = (Math.random() - 0.5) * 0.003
     }
     return [p, v]
-  }, [])
+  }, [count])
 
   useFrame(() => {
     if (!ref.current) return
@@ -85,6 +89,8 @@ function FloatingParticles() {
 function Planet({ orbitRadius, size, color, emissive, speed, tilt = 0, offset = 0, hasRing = false }) {
   const groupRef = useRef()
   const initialAngle = useRef(Math.random() * Math.PI * 2)
+  const { isMobile } = useDevice()
+  const segs = isMobile ? 20 : 32
 
   useFrame((state, delta) => {
     if (!groupRef.current) return
@@ -98,12 +104,12 @@ function Planet({ orbitRadius, size, color, emissive, speed, tilt = 0, offset = 
   return (
     <group ref={groupRef} rotation-x={tilt}>
       <mesh>
-        <sphereGeometry args={[size, 24, 24]} />
+        <sphereGeometry args={[size, segs, segs]} />
         <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.4} metalness={0.4} roughness={0.6} />
       </mesh>
       {hasRing && (
         <mesh rotation-x={Math.PI / 2.5}>
-          <ringGeometry args={[size * 1.6, size * 2.2, 48]} />
+          <ringGeometry args={[size * 1.6, size * 2.2, isMobile ? 24 : 48]} />
           <meshBasicMaterial color={emissive} transparent opacity={0.3} side={THREE.DoubleSide} />
         </mesh>
       )}
@@ -141,6 +147,7 @@ function Sun() {
   const meshRef = useRef()
   const glowRef = useRef()
   const glowOuterRef = useRef()
+  const { isMobile } = useDevice()
 
   useFrame((state, delta) => {
     if (meshRef.current) {
@@ -160,6 +167,9 @@ function Sun() {
     }
   })
 
+  const knotSegs = isMobile ? 48 : 96
+  const knotTubes = isMobile ? 8 : 16
+
   return (
     <group>
       <mesh ref={glowOuterRef} scale={[5, 5, 5]}>
@@ -171,7 +181,7 @@ function Sun() {
         <meshBasicMaterial color="#F97316" transparent opacity={0.15} />
       </mesh>
       <mesh ref={meshRef} scale={1.2}>
-        <torusKnotGeometry args={[0.5, 0.2, 48, 8]} />
+        <torusKnotGeometry args={[0.5, 0.2, knotSegs, knotTubes]} />
         <meshStandardMaterial
           color="#F97316" emissive="#EA580C" emissiveIntensity={0.8}
           metalness={0.9} roughness={0.1} envMapIntensity={2.5}
@@ -222,12 +232,20 @@ function Universe({ mouse }) {
 }
 
 export default function HeroScene3D({ mouse, scroll }) {
+  const { isMobile } = useDevice()
+
   return (
     <div className="absolute inset-0 z-0">
       <Canvas
         camera={{ position: [0, 1.5, 7], fov: 50, near: 0.1, far: 40 }}
-        dpr={[0.5, 0.8]}
-        gl={{ alpha: true, antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.5, powerPreference: 'high-performance' }}
+        dpr={isMobile ? [0.6, 1.0] : [1, 1.5]}
+        gl={{
+          alpha: true,
+          antialias: !isMobile,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.5,
+          powerPreference: 'high-performance',
+        }}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
@@ -236,6 +254,11 @@ export default function HeroScene3D({ mouse, scroll }) {
           <directionalLight position={[-2, 1, -1]} intensity={0.25} color="#F5EDD6" />
           <pointLight position={[0, 0, 0]} intensity={2} color="#F97316" distance={15} decay={1.2} />
           <Universe mouse={mouse} />
+          {!isMobile && (
+            <EffectComposer>
+              <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.92} intensity={1.2} mipmapBlur />
+            </EffectComposer>
+          )}
           <AdaptiveDpr pixelated />
         </Suspense>
       </Canvas>

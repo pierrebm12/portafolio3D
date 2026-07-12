@@ -1,0 +1,14 @@
+import { useState, useEffect } from 'react'
+
+export function useDevice() {
+  const [isMobile, setIsMobile] = useState(true)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  return { isMobile }
+}
