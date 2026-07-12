@@ -1,5 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
-import { useScroll } from 'framer-motion'
+import { Suspense, lazy } from 'react'
 import Navbar from './components/portfolio/Navbar'
 import HeroSection from './components/portfolio/HeroSection'
 import ServicesSection from './components/portfolio/ServicesSection'
@@ -7,21 +6,17 @@ import ProjectsSection from './components/portfolio/ProjectsSection'
 import FAQSection from './components/portfolio/FAQSection'
 import CTASection from './components/portfolio/CTASection'
 import FooterPortfolio from './components/portfolio/FooterPortfolio'
-import Scene3D from './components/portfolio/Scene3D'
+
+const LazyScene = lazy(() => import('./components/portfolio/Scene3D'))
 
 export default function App() {
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const mainRef = useRef(null)
-  const { scrollYProgress } = useScroll({ target: mainRef, offset: ['start start', 'end end'] })
-
-  useEffect(() => {
-    const unsub = scrollYProgress.on('change', setScrollProgress)
-    return () => unsub()
-  }, [scrollYProgress])
-
   return (
-    <div ref={mainRef} className="relative min-h-screen bg-[#0A0A0A] text-[#F5EDD6] antialiased overflow-x-hidden">
-      <Scene3D scrollProgress={scrollProgress} />
+    <div className="relative min-h-screen bg-[#0A0A0A] text-[#F5EDD6] antialiased overflow-x-hidden">
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <Suspense fallback={<div className="absolute inset-0 bg-[#0A0A0A]" />}>
+          <LazyScene />
+        </Suspense>
+      </div>
       <div className="relative z-10">
         <Navbar />
         <HeroSection />
