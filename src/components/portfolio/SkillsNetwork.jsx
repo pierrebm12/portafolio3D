@@ -15,13 +15,14 @@ const projects = [
 
 function Universe() {
   const groupRef = useRef()
+  const lineRefs = useRef([])
 
   const clusterData = useMemo(() => {
     return projects.map((proj, ci) => {
       const angle = (ci / projects.length) * Math.PI * 2 - Math.PI / 2
-      const cx = Math.cos(angle) * 3.8
-      const cy = Math.sin(angle * 2) * 0.6
-      const cz = Math.sin(angle) * 1.5
+      const cx = Math.cos(angle) * 3.2
+      const cy = Math.sin(angle * 2) * 0.5
+      const cz = Math.sin(angle) * 1.2
       const orbit = proj.skills.map(() => ({
         theta: Math.random() * Math.PI * 2,
         phi: Math.acos(2 * Math.random() - 1),
@@ -48,7 +49,7 @@ function Universe() {
     return conns
   }, [])
 
-  const lineRefs = useRef([])
+  const lineCount = possibleConnections.length
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05)
@@ -65,7 +66,7 @@ function Universe() {
         const a = clusterData[i], b = clusterData[j]
         const dx = a.cx - b.cx, dy = a.cy - b.cy, dz = a.cz - b.cz
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
-        const minDist = 3.0
+        const minDist = 2.8
         if (dist < minDist && dist > 0.001) {
           const force = (minDist - dist) / minDist * 0.008
           const invDist = 1 / dist
@@ -80,12 +81,16 @@ function Universe() {
         const o = cd.orbit[si]
         o.theta += dt * o.speed
         o.phi += dt * o.speed * 0.3
-        const r = 0.7 + Math.sin(t * 0.25 + o.osc) * 0.12
+        const r = 1.0 + Math.sin(t * 0.25 + o.osc) * 0.15
         const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
-        const ly = Math.cos(o.phi) * r * 0.4 + Math.sin(t * 0.15 + o.osc) * 0.08
+        const ly = Math.cos(o.phi) * r * 0.5 + Math.sin(t * 0.15 + o.osc) * 0.1
         const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
         cd.worldPositions[si].set(cd.cx + lx, cd.cy + ly, cd.cz + lz)
       })
+    })
+
+    clusterData.forEach((cd) => {
+      const child = groupRef.current?.children[cd.proj.skills.length + 1]
     })
 
     const refs = lineRefs.current
@@ -94,14 +99,14 @@ function Universe() {
       const posA = clusterData[conn.ci].worldPositions[conn.si]
       const posB = clusterData[conn.cj].worldPositions[conn.sj]
       const dist = posA.distanceTo(posB)
-      if (dist < 2.0 && lineIdx < refs.length) {
+      if (dist < 2.2 && lineIdx < refs.length) {
         const line = refs[lineIdx]
         if (line) {
           const arr = line.geometry.attributes.position.array
           arr[0] = posA.x; arr[1] = posA.y; arr[2] = posA.z
           arr[3] = posB.x; arr[4] = posB.y; arr[5] = posB.z
           line.geometry.attributes.position.needsUpdate = true
-          const opacity = Math.max(0.05, (1 - dist / 2.0) * 0.6)
+          const opacity = Math.max(0.05, (1 - dist / 2.2) * 0.6)
           const glow = 0.3 + Math.sin(t * 0.8 + conn.phase) * 0.2
           line.material.opacity = opacity * glow
           line.visible = true
@@ -114,33 +119,30 @@ function Universe() {
     }
   })
 
-  const lineCount = possibleConnections.length
-
   return (
     <group ref={groupRef}>
       {clusterData.map((cd, ci) => (
         <group key={ci}>
           {cd.proj.skills.map((skill, si) => {
+            const r = 1.0
             const o = cd.orbit[si]
-            const r = 0.7
             const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
-            const ly = Math.cos(o.phi) * r * 0.4
+            const ly = Math.cos(o.phi) * r * 0.5
             const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
-            const initPos = [lx, ly, lz]
             return (
-              <group key={si} position={initPos}>
+              <group key={si} position={[lx, ly, lz]}>
                 <mesh>
-                  <sphereGeometry args={[0.07, 12, 12]} />
-                  <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.5} metalness={0.3} roughness={0.2} />
+                  <sphereGeometry args={[0.09, 16, 16]} />
+                  <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.6} metalness={0.3} roughness={0.2} />
                 </mesh>
-                <Text position={[0, -0.12, 0]} fontSize={0.035} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.5}>
+                <Text position={[0, -0.16, 0]} fontSize={0.045} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.6}>
                   {skill}
                 </Text>
               </group>
             )
           })}
-          <group position={[0, -1.0, 0]}>
-            <Text fontSize={0.06} color={cd.proj.color} anchorX="center" anchorY="top" fontWeight={700}>
+          <group position={[0, -1.3, 0]}>
+            <Text fontSize={0.08} color={cd.proj.color} anchorX="center" anchorY="top" fontWeight={700}>
               {cd.proj.name}
             </Text>
           </group>
@@ -159,21 +161,48 @@ function Universe() {
   )
 }
 
+function SkyDome() {
+  const ref = useRef()
+  const count = 1200
+  const pos = useMemo(() => {
+    const p = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const r = 12 + Math.random() * 18
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+      p[i * 3] = r * Math.sin(phi) * Math.cos(theta)
+      p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
+      p[i * 3 + 2] = r * Math.cos(phi)
+    }
+    return p
+  }, [])
+  useFrame((_, delta) => { if (ref.current) ref.current.rotation.y += delta * 0.002 })
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={count} array={pos} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial size={0.05} color="#F5EDD6" transparent opacity={0.25} sizeAttenuation />
+    </points>
+  )
+}
+
 export default function SkillsNetwork() {
   return (
     <Canvas
-      camera={{ position: [0, 0.5, 7.5], fov: 45, near: 0.1, far: 25 }}
+      camera={{ position: [0, 0.3, 6], fov: 50, near: 0.1, far: 30 }}
       dpr={[0.8, 1.2]}
       gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', width: '100%', height: '100%' }}
     >
       <Suspense fallback={null}>
         <ambientLight intensity={0.2} />
         <directionalLight position={[2, 3, 4]} intensity={0.5} color="#F97316" />
         <directionalLight position={[-2, -1, -2]} intensity={0.2} color="#F5EDD6" />
+        <SkyDome />
         <Universe />
         <EffectComposer>
-          <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={0.5} mipmapBlur />
+          <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />
         </EffectComposer>
         <AdaptiveDpr pixelated />
       </Suspense>

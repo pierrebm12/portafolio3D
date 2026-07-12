@@ -8,10 +8,10 @@ export default function SkillsSection() {
   const isInView = useInView(sectionRef, { once: true, margin: '-150px' })
 
   return (
-    <section id="habilidades" ref={sectionRef} className="relative py-28 sm:py-36 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#F97316]/[0.015] to-transparent" />
+    <section id="habilidades" ref={sectionRef} className="relative h-screen w-screen overflow-hidden bg-[#0A0A0A]">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#F97316]/[0.015] to-transparent pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 mb-10">
+      <div className="relative z-10 px-6 lg:px-10 pt-16 sm:pt-20">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -28,14 +28,12 @@ export default function SkillsSection() {
 
       {isInView && (
         <Suspense fallback={
-          <div className="w-full h-[500px] sm:h-[600px] flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[#F97316] border-t-transparent rounded-full animate-spin" />
           </div>
         }>
-          <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-            <div className="h-[500px] sm:h-[600px] md:h-[650px]">
-              <LazyNetwork />
-            </div>
+          <div className="absolute inset-0 top-0">
+            <LazyNetwork />
           </div>
         </Suspense>
       )}
