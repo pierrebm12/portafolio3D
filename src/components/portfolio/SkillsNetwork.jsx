@@ -22,7 +22,7 @@ const skillToProjectType = {
   PostgreSQL: 'Base Relacional', Tailwind: 'UI Responsive',
 }
 
-const PARTICLE_RADIUS = 0.1
+const PARTICLE_RADIUS = 0.16
 const LINE_VISIBLE_DURATION = 3.0
 const LINE_FADE_DURATION = 0.8
 const LINE_OFF_DURATION = 2.0
@@ -61,7 +61,7 @@ function Universe() {
   const initialPositions = useMemo(() =>
     projects.map((_, ci) => {
       const angle = (ci / projects.length) * Math.PI * 2 - Math.PI / 2
-      return { x: Math.cos(angle) * 3.2, y: Math.sin(angle * 2) * 0.5, z: Math.sin(angle) * 1.2 }
+      return { x: Math.cos(angle) * 2.6, y: Math.sin(angle * 2) * 0.4, z: Math.sin(angle) * 1.0 }
     }), [])
 
   const clusterData = useMemo(() => {
@@ -140,7 +140,7 @@ function Universe() {
       cd.proj.skills.forEach((_, si) => {
         const o = cd.orbit[si]
         o.theta += dt * o.speed; o.phi += dt * o.speed * 0.3
-        const r = 1.0 + Math.sin(t * 0.2 + o.osc) * 0.08
+        const r = 0.7 + Math.sin(t * 0.2 + o.osc) * 0.06
         const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
         const ly = Math.cos(o.phi) * r * 0.5 + Math.sin(t * 0.12 + o.osc) * 0.06
         const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
