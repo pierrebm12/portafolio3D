@@ -26,6 +26,7 @@ function Universe() {
   const groupRef = useRef()
   const lineRefs = useRef([])
   const labelGroupRefs = useRef([])
+  const internalLineRefs = useRef(projects.map(() => []))
   const nodeRefs = useRef({})
 
   const initialPositions = useMemo(() =>
@@ -44,6 +45,18 @@ function Universe() {
       return { proj, cx: ip.x, cy: ip.y, cz: ip.z, orbit, worldPositions: proj.skills.map(() => new THREE.Vector3()) }
     })
   }, [initialPositions])
+
+  const internalPairs = useMemo(() => {
+    const all = []
+    projects.forEach((proj, ci) => {
+      const pairs = []
+      for (let i = 0; i < proj.skills.length; i++)
+        for (let j = i + 1; j < proj.skills.length; j++)
+          pairs.push({ ci, si: i, sj: j })
+      all.push(pairs)
+    })
+    return all
+  }, [])
 
   const possibleConnections = useMemo(() => {
     const conns = []
@@ -101,6 +114,22 @@ function Universe() {
         const nodeGroup = nodeRefs.current[`${ci}-${si}`]
         if (nodeGroup) nodeGroup.position.set(lx, ly, lz)
       })
+
+      const intLines = internalLineRefs.current[ci] || []
+      intLines.forEach((line, li) => {
+        if (!line || !line.parent) return
+        const pair = internalPairs[ci][li]
+        if (!pair) return
+        const posA = cd.worldPositions[pair.si]
+        const posB = cd.worldPositions[pair.sj]
+        const arr = line.geometry.attributes.position.array
+        arr[0] = posA.x; arr[1] = posA.y; arr[2] = posA.z
+        arr[3] = posB.x; arr[4] = posB.y; arr[5] = posB.z
+        line.geometry.attributes.position.needsUpdate = true
+        const pulse = 0.12 + Math.sin(t * 0.3 + li) * 0.06
+        line.material.opacity = pulse
+        line.visible = true
+      })
     })
 
     const refs = lineRefs.current, lg = labelGroupRefs.current
@@ -139,6 +168,14 @@ function Universe() {
     <group ref={groupRef}>
       {clusterData.map((cd, ci) => (
         <group key={ci}>
+          {internalPairs[ci].length > 0 && internalPairs[ci].map((_, li) => (
+            <line key={`int-${li}`} ref={(el) => { if (el) internalLineRefs.current[ci][li] = el }}>
+              <bufferGeometry>
+                <bufferAttribute attach="attributes-position" count={2} array={new Float32Array(6)} itemSize={3} />
+              </bufferGeometry>
+              <lineBasicMaterial color={cd.proj.color} transparent opacity={0.1} />
+            </line>
+          ))}
           {cd.proj.skills.map((skill, si) => (
             <group key={si} ref={(el) => { if (el) nodeRefs.current[`${ci}-${si}`] = el }}>
               <mesh>
