@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import Navbar from './components/portfolio/Navbar'
 import HeroSection from './components/portfolio/HeroSection'
+import SkillsSection from './components/portfolio/SkillsSection'
 import ServicesSection from './components/portfolio/ServicesSection'
 import ProjectsSection from './components/portfolio/ProjectsSection'
 import FAQSection from './components/portfolio/FAQSection'
@@ -20,6 +21,7 @@ export default function App() {
       <div className="relative z-10">
         <Navbar />
         <HeroSection />
+        <SkillsSection />
         <ServicesSection />
         <ProjectsSection />
         <FAQSection />
