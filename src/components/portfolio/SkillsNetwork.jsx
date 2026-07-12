@@ -22,6 +22,35 @@ const skillToProjectType = {
   PostgreSQL: 'Base Relacional', Tailwind: 'UI Responsive',
 }
 
+const PARTICLE_RADIUS = 0.1
+const LINE_VISIBLE_DURATION = 3.0
+const LINE_FADE_DURATION = 0.8
+const LINE_OFF_DURATION = 2.0
+const LINE_CYCLE = LINE_VISIBLE_DURATION + LINE_OFF_DURATION + LINE_FADE_DURATION * 2
+
+function getLineOpacity(t, phase) {
+  const cycleT = ((t + phase) % LINE_CYCLE + LINE_CYCLE) % LINE_CYCLE
+  if (cycleT < LINE_FADE_DURATION) return cycleT / LINE_FADE_DURATION
+  if (cycleT < LINE_FADE_DURATION + LINE_VISIBLE_DURATION) return 1
+  if (cycleT < LINE_FADE_DURATION + LINE_VISIBLE_DURATION + LINE_FADE_DURATION) return 1 - (cycleT - LINE_FADE_DURATION - LINE_VISIBLE_DURATION) / LINE_FADE_DURATION
+  return 0
+}
+
+function updateLine(line, posA, posB, opacity) {
+  if (!line || !line.parent) return
+  const dx = posB.x - posA.x, dy = posB.y - posA.y, dz = posB.z - posA.z
+  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
+  if (dist < 0.001) { line.visible = false; return }
+  const inv = 1 / dist
+  const ox = dx * inv * PARTICLE_RADIUS, oy = dy * inv * PARTICLE_RADIUS, oz = dz * inv * PARTICLE_RADIUS
+  const arr = line.geometry.attributes.position.array
+  arr[0] = posA.x + ox; arr[1] = posA.y + oy; arr[2] = posA.z + oz
+  arr[3] = posB.x - ox; arr[4] = posB.y - oy; arr[5] = posB.z - oz
+  line.geometry.attributes.position.needsUpdate = true
+  line.material.opacity = opacity
+  line.visible = opacity > 0.01
+}
+
 function Universe() {
   const groupRef = useRef()
   const lineRefs = useRef([])
@@ -58,6 +87,10 @@ function Universe() {
     return all
   }, [])
 
+  const internalPhases = useMemo(() => {
+    return internalPairs.map(pairs => pairs.map(() => Math.random() * LINE_CYCLE))
+  }, [])
+
   const possibleConnections = useMemo(() => {
     const conns = []
     for (let ci = 0; ci < projects.length; ci++)
@@ -65,8 +98,7 @@ function Universe() {
         for (let si = 0; si < projects[ci].skills.length; si++)
           for (let sj = 0; sj < projects[cj].skills.length; sj++)
             if (projects[ci].skills[si] === projects[cj].skills[sj]) {
-              const skill = projects[ci].skills[si]
-              conns.push({ ci, si, cj, sj, phase: Math.random() * Math.PI * 2, skill, projectType: skillToProjectType[skill] || skill })
+              conns.push({ ci, si, cj, sj, phase: Math.random() * LINE_CYCLE, skill: projects[ci].skills[si], projectType: skillToProjectType[projects[ci].skills[si]] || projects[ci].skills[si] })
             }
     return conns
   }, [])
@@ -100,6 +132,8 @@ function Universe() {
       }
     }
 
+    const internalLineVisCount = { current: 0 }
+
     clusterData.forEach((cd, ci) => {
       const childGroup = groupRef.current?.children[ci]
       if (childGroup) childGroup.position.set(cd.cx, cd.cy, cd.cz)
@@ -115,20 +149,17 @@ function Universe() {
         if (nodeGroup) nodeGroup.position.set(lx, ly, lz)
       })
 
+      const phases = internalPhases[ci]
+      const pairs = internalPairs[ci]
       const intLines = internalLineRefs.current[ci] || []
-      intLines.forEach((line, li) => {
-        if (!line || !line.parent) return
-        const pair = internalPairs[ci][li]
-        if (!pair) return
+      pairs.forEach((pair, li) => {
+        const line = intLines[li]
+        if (!line) return
         const posA = cd.worldPositions[pair.si]
         const posB = cd.worldPositions[pair.sj]
-        const arr = line.geometry.attributes.position.array
-        arr[0] = posA.x; arr[1] = posA.y; arr[2] = posA.z
-        arr[3] = posB.x; arr[4] = posB.y; arr[5] = posB.z
-        line.geometry.attributes.position.needsUpdate = true
-        const pulse = 0.12 + Math.sin(t * 0.3 + li) * 0.06
-        line.material.opacity = pulse
-        line.visible = true
+        const opacity = getLineOpacity(t, phases[li])
+        updateLine(line, posA, posB, opacity * 0.5)
+        if (opacity > 0.01) internalLineVisCount.current++
       })
     })
 
@@ -141,19 +172,17 @@ function Universe() {
       if (dist < 2.5 && idx < refs.length) {
         const line = refs[idx]
         if (line) {
-          const arr = line.geometry.attributes.position.array
-          arr[0] = posA.x; arr[1] = posA.y; arr[2] = posA.z
-          arr[3] = posB.x; arr[4] = posB.y; arr[5] = posB.z
-          line.geometry.attributes.position.needsUpdate = true
-          const op = Math.max(0.05, (1 - dist / 2.5) * 0.7) * (0.4 + Math.sin(t * 0.6 + conn.phase) * 0.2)
-          line.material.opacity = op; line.visible = true
+          const baseOpacity = getLineOpacity(t, conn.phase)
+          const distFactor = Math.max(0.05, 1 - dist / 2.5)
+          updateLine(line, posA, posB, baseOpacity * distFactor * 0.7)
         }
         const g = lg[idx]
         if (g) {
           g.position.set((posA.x + posB.x) / 2, (posA.y + posB.y) / 2 + 0.18, (posA.z + posB.z) / 2)
           const intensity = Math.max(0, (1 - dist / 2.5))
+          const baseOpacity = getLineOpacity(t, conn.phase)
           g.scale.setScalar(0.5 + intensity * 0.5)
-          g.visible = true
+          g.visible = baseOpacity > 0.01 && intensity > 0.05
         }
         idx++
       }
@@ -173,13 +202,13 @@ function Universe() {
               <bufferGeometry>
                 <bufferAttribute attach="attributes-position" count={2} array={new Float32Array(6)} itemSize={3} />
               </bufferGeometry>
-              <lineBasicMaterial color={cd.proj.color} transparent opacity={0.1} />
+              <lineBasicMaterial color={cd.proj.color} transparent opacity={0} />
             </line>
           ))}
           {cd.proj.skills.map((skill, si) => (
             <group key={si} ref={(el) => { if (el) nodeRefs.current[`${ci}-${si}`] = el }}>
               <mesh>
-                <sphereGeometry args={[0.1, 16, 16]} />
+                <sphereGeometry args={[PARTICLE_RADIUS, 16, 16]} />
                 <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.6} metalness={0.3} roughness={0.2} />
               </mesh>
               <Text position={[0, -0.18, 0]} fontSize={0.05} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.7}>{skill}</Text>

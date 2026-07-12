@@ -36,7 +36,49 @@ function StarField() {
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
         <bufferAttribute attach="attributes-size" count={count} array={sizes} itemSize={1} />
       </bufferGeometry>
-      <pointsMaterial size={0.06} color="#F5EDD6" transparent opacity={0.7} sizeAttenuation blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.06} color="#F5EDD6" transparent opacity={0.6} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
+    </points>
+  )
+}
+
+function FloatingParticles() {
+  const ref = useRef()
+  const count = 200
+  const [positions, velocities] = useMemo(() => {
+    const p = new Float32Array(count * 3)
+    const v = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      p[i * 3] = (Math.random() - 0.5) * 12
+      p[i * 3 + 1] = (Math.random() - 0.5) * 8
+      p[i * 3 + 2] = -3 + Math.random() * 4
+      v[i * 3] = (Math.random() - 0.5) * 0.003
+      v[i * 3 + 1] = (Math.random() - 0.5) * 0.003
+      v[i * 3 + 2] = (Math.random() - 0.5) * 0.003
+    }
+    return [p, v]
+  }, [])
+
+  useFrame(() => {
+    if (!ref.current) return
+    const arr = ref.current.geometry.attributes.position.array
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] += velocities[i * 3]
+      arr[i * 3 + 1] += velocities[i * 3 + 1]
+      arr[i * 3 + 2] += velocities[i * 3 + 2]
+      if (Math.abs(arr[i * 3]) > 6) velocities[i * 3] *= -1
+      if (Math.abs(arr[i * 3 + 1]) > 4) velocities[i * 3 + 1] *= -1
+      if (arr[i * 3 + 2] < -3 || arr[i * 3 + 2] > 1) velocities[i * 3 + 2] *= -1
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true
+  })
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-size" count={count} array={new Float32Array(count).fill(0.02)} itemSize={1} />
+      </bufferGeometry>
+      <pointsMaterial size={0.03} color="#F97316" transparent opacity={0.15} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
     </points>
   )
 }
@@ -58,12 +100,12 @@ function Planet({ orbitRadius, size, color, emissive, speed, tilt = 0, offset = 
     <group ref={groupRef} rotation-x={tilt}>
       <mesh>
         <sphereGeometry args={[size, 24, 24]} />
-        <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.3} metalness={0.4} roughness={0.6} />
+        <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.4} metalness={0.4} roughness={0.6} />
       </mesh>
       {hasRing && (
         <mesh rotation-x={Math.PI / 2.5}>
           <ringGeometry args={[size * 1.6, size * 2.2, 48]} />
-          <meshBasicMaterial color={emissive} transparent opacity={0.25} side={THREE.DoubleSide} />
+          <meshBasicMaterial color={emissive} transparent opacity={0.3} side={THREE.DoubleSide} />
         </mesh>
       )}
     </group>
@@ -91,7 +133,7 @@ function OrbitRing({ radius }) {
           itemSize={3}
         />
       </bufferGeometry>
-      <lineBasicMaterial color="#F97316" transparent opacity={0.08} />
+      <lineBasicMaterial color="#F97316" transparent opacity={0.06} />
     </line>
   )
 }
@@ -99,6 +141,7 @@ function OrbitRing({ radius }) {
 function Sun() {
   const meshRef = useRef()
   const glowRef = useRef()
+  const glowOuterRef = useRef()
 
   useFrame((state, delta) => {
     if (meshRef.current) {
@@ -106,15 +149,25 @@ function Sun() {
       meshRef.current.rotation.y += delta * 0.2
       meshRef.current.rotation.z += delta * 0.05
     }
+    const t = state.clock.elapsedTime
     if (glowRef.current) {
-      const pulse = 0.8 + Math.sin(state.clock.elapsedTime * 0.6) * 0.2
-      glowRef.current.material.opacity = pulse * 0.15
+      const pulse = 0.7 + Math.sin(t * 0.5) * 0.3
+      glowRef.current.material.opacity = pulse * 0.12
+    }
+    if (glowOuterRef.current) {
+      const pulse = 0.5 + Math.sin(t * 0.3 + 1) * 0.5
+      glowOuterRef.current.material.opacity = pulse * 0.06
+      glowOuterRef.current.scale.setScalar(1 + Math.sin(t * 0.2) * 0.1)
     }
   })
 
   return (
     <group>
-      <mesh ref={glowRef} scale={[3.5, 3.5, 3.5]}>
+      <mesh ref={glowOuterRef} scale={[5, 5, 5]}>
+        <sphereGeometry args={[1, 16, 16]} />
+        <meshBasicMaterial color="#F97316" transparent opacity={0.06} />
+      </mesh>
+      <mesh ref={glowRef} scale={[3, 3, 3]}>
         <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial color="#F97316" transparent opacity={0.15} />
       </mesh>
@@ -149,11 +202,11 @@ function Universe({ mouse }) {
 
   useFrame((state) => {
     if (!groupRef.current) return
-    const mx = mouse.current.x * 0.2
-    const my = mouse.current.y * 0.2
-    groupRef.current.rotation.x = my * 0.1
-    groupRef.current.rotation.y = mx * 0.1
-    groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.05) * 0.1
+    const mx = mouse.current.x * 0.15
+    const my = mouse.current.y * 0.15
+    groupRef.current.rotation.x = my * 0.08
+    groupRef.current.rotation.y = mx * 0.08
+    groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.05) * 0.08
   })
 
   return (
@@ -164,6 +217,7 @@ function Universe({ mouse }) {
         <Planet key={i} orbitRadius={p.orbit} size={p.size} color={p.color} emissive={p.emissive} speed={p.speed} tilt={p.tilt} offset={i * 0.8} hasRing={p.hasRing} />
       ))}
       <StarField />
+      <FloatingParticles />
     </group>
   )
 }
@@ -178,13 +232,13 @@ export default function HeroScene3D({ mouse, scroll }) {
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.2} />
-          <directionalLight position={[2, 4, 3]} intensity={0.6} color="#F97316" />
-          <directionalLight position={[-2, 1, -1]} intensity={0.3} color="#F5EDD6" />
+          <ambientLight intensity={0.15} />
+          <directionalLight position={[2, 4, 3]} intensity={0.5} color="#F97316" />
+          <directionalLight position={[-2, 1, -1]} intensity={0.25} color="#F5EDD6" />
           <pointLight position={[0, 0, 0]} intensity={2} color="#F97316" distance={15} decay={1.2} />
           <Universe mouse={mouse} />
           <EffectComposer>
-            <Bloom luminanceThreshold={0.05} luminanceSmoothing={0.95} intensity={1.5} mipmapBlur />
+            <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.92} intensity={1.2} mipmapBlur />
           </EffectComposer>
           <AdaptiveDpr pixelated />
         </Suspense>
