@@ -178,6 +178,17 @@ export default function HeroSection() {
       </motion.div>
 
       <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 2.5, duration: 0.8 }}
+        className="absolute bottom-10 right-10 z-10 hidden sm:block"
+      >
+        <p className="text-[10px] font-['DM_Sans',sans-serif] text-[#5A5A5A] tracking-[0.15em] uppercase">
+          Desarrollado por <span className="text-[#8B5E3C] font-semibold">Pierre Buitrago</span>
+        </p>
+      </motion.div>
+
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 0.8 }}

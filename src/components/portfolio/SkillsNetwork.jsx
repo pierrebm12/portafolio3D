@@ -197,14 +197,6 @@ function Universe() {
     <group ref={groupRef}>
       {clusterData.map((cd, ci) => (
         <group key={ci}>
-          {internalPairs[ci].length > 0 && internalPairs[ci].map((_, li) => (
-            <line key={`int-${li}`} ref={(el) => { if (el) internalLineRefs.current[ci][li] = el }}>
-              <bufferGeometry>
-                <bufferAttribute attach="attributes-position" count={2} array={new Float32Array(6)} itemSize={3} />
-              </bufferGeometry>
-              <lineBasicMaterial color={cd.proj.color} transparent opacity={0} />
-            </line>
-          ))}
           {cd.proj.skills.map((skill, si) => (
             <group key={si} ref={(el) => { if (el) nodeRefs.current[`${ci}-${si}`] = el }}>
               <mesh>
@@ -220,6 +212,16 @@ function Universe() {
         </group>
       ))}
 
+      {clusterData.flatMap((cd, ci) =>
+        internalPairs[ci].map((_, li) => (
+          <line key={`int-${ci}-${li}`} ref={(el) => { if (el) internalLineRefs.current[ci][li] = el }}>
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" count={2} array={new Float32Array(6)} itemSize={3} />
+            </bufferGeometry>
+            <lineBasicMaterial color={cd.proj.color} transparent opacity={0} />
+          </line>
+        ))
+      )}
       {Array.from({ length: lineCount }).map((_, i) => (
         <group key={i}>
           <line ref={(el) => { if (el) lineRefs.current[i] = el }}>

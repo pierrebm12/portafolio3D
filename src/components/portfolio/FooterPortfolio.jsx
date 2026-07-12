@@ -40,7 +40,7 @@ export default function FooterPortfolio() {
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
           className="mt-12 pt-8 border-t border-[#F97316]/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs font-['DM_Sans',sans-serif] text-[#A3A3A3]">&copy; {year} Devtro. Todos los derechos reservados.</p>
-          <p className="text-xs font-['DM_Sans',sans-serif] text-[#5A5A5A] flex items-center gap-1">Hecho con <HiHeart className="text-[#F97316]" size={12} /> desde cero</p>
+          <p className="text-xs font-['DM_Sans',sans-serif] text-[#5A5A5A] flex items-center gap-1">Desarrollado por <span className="text-[#F97316] font-semibold">Pierre Buitrago</span></p>
         </motion.div>
       </div>
     </footer>

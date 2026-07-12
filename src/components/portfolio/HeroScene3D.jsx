@@ -190,11 +190,11 @@ function Universe({ mouse }) {
   const groupRef = useRef()
 
   const planets = useMemo(() => [
-    { orbit: 2.0, size: 0.12, color: '#8B5E3C', emissive: '#6B4226', speed: 0.5, tilt: 0.1, hasRing: false },
-    { orbit: 2.8, size: 0.18, color: '#F5EDD6', emissive: '#D4C5A8', speed: 0.35, tilt: -0.2, hasRing: true },
-    { orbit: 3.6, size: 0.15, color: '#FAFAFA', emissive: '#D4D4D4', speed: 0.25, tilt: 0.15, hasRing: false },
-    { orbit: 4.4, size: 0.22, color: '#F97316', emissive: '#EA580C', speed: 0.18, tilt: -0.1, hasRing: true },
-    { orbit: 5.2, size: 0.1, color: '#6B4226', emissive: '#4A2A16', speed: 0.12, tilt: 0.3, hasRing: false },
+    { orbit: 4.0, size: 0.12, color: '#8B5E3C', emissive: '#6B4226', speed: 0.4, tilt: 0.1, hasRing: false },
+    { orbit: 4.4, size: 0.22, color: '#F97316', emissive: '#EA580C', speed: 0.32, tilt: -0.1, hasRing: true },
+    { orbit: 4.8, size: 0.18, color: '#F5EDD6', emissive: '#D4C5A8', speed: 0.25, tilt: -0.2, hasRing: true },
+    { orbit: 5.2, size: 0.1, color: '#6B4226', emissive: '#4A2A16', speed: 0.18, tilt: 0.3, hasRing: false },
+    { orbit: 5.6, size: 0.15, color: '#FAFAFA', emissive: '#D4D4D4', speed: 0.12, tilt: 0.15, hasRing: false },
     { orbit: 6.0, size: 0.2, color: '#D4C5A8', emissive: '#A0907A', speed: 0.08, tilt: -0.25, hasRing: true },
   ], [])
 
