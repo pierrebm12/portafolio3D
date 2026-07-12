@@ -9,22 +9,22 @@ import ParticleField from './ParticleField'
 export default function Scene3D() {
   return (
     <Canvas
-      camera={{ position: [0, 0, 8], fov: 50, near: 0.1, far: 35 }}
+      camera={{ position: [0, 0, 9], fov: 50, near: 0.1, far: 40 }}
       dpr={[0.8, 1.2]}
-      gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+      gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.3 }}
       style={{ background: 'transparent' }}
-
     >
       <Suspense fallback={null}>
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[5, 8, 5]} intensity={1.0} color="#F97316" />
-        <directionalLight position={[-4, 3, -3]} intensity={0.5} color="#F5EDD6" />
-        <pointLight position={[0, 0, 5]} intensity={0.6} color="#F97316" distance={12} decay={1.5} />
+        <ambientLight intensity={0.35} />
+        <directionalLight position={[6, 8, 5]} intensity={1.0} color="#F97316" />
+        <directionalLight position={[-5, 3, -4]} intensity={0.5} color="#F5EDD6" />
+        <directionalLight position={[0, -5, 3]} intensity={0.3} color="#8B5E3C" />
+        <pointLight position={[0, 0, 6]} intensity={0.8} color="#F97316" distance={14} decay={1.5} />
         <FloatingShapes />
-        <ParticleField count={200} />
+        <ParticleField count={400} />
         <Environment preset="night" background={false} />
         <EffectComposer>
-          <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.85} intensity={0.4} mipmapBlur />
+          <Bloom luminanceThreshold={0.15} luminanceSmoothing={0.9} intensity={0.5} mipmapBlur />
         </EffectComposer>
         <AdaptiveDpr pixelated />
       </Suspense>
