@@ -1,142 +1,159 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { AdaptiveDpr } from '@react-three/drei'
+import { AdaptiveDpr, Text } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
 
-const allSkills = [
-  'React', 'Node.js', 'Express', 'MySQL', 'CSS', 'HTML', 'Stripe', 'Redux',
-  'React Native', 'Firebase', 'TypeScript', 'API REST', 'Python', 'OpenAI',
-  'WebSocket', 'MongoDB', 'D3.js', 'PostgreSQL', 'Tailwind', 'Git', 'Docker',
-  'Next.js', 'GraphQL', 'AWS', 'Figma',
+const projects = [
+  { name: 'E-Shop Pro', color: '#F97316', skills: ['React', 'Node.js', 'Express', 'MySQL', 'CSS', 'HTML', 'Stripe', 'Redux'] },
+  { name: 'SocialFlow', color: '#F5EDD6', skills: ['React Native', 'Firebase', 'TypeScript', 'Redux', 'API REST', 'Node.js'] },
+  { name: 'AI ChatBot', color: '#8B5E3C', skills: ['Python', 'OpenAI', 'Node.js', 'WebSocket', 'MongoDB', 'Express'] },
+  { name: 'Dashboard KV', color: '#FAFAFA', skills: ['React', 'D3.js', 'Node.js', 'PostgreSQL', 'Tailwind', 'TypeScript', 'CSS'] },
+  { name: 'FitApp', color: '#F97316', skills: ['React Native', 'Firebase', 'Redux', 'API REST', 'Stripe', 'MongoDB'] },
 ]
 
-function SkillParticle({ position, label, index, connections }) {
-  const meshRef = useRef()
-  const glowRef = useRef()
-  const pulseSpeed = 0.3 + Math.random() * 0.4
-  const phase = Math.random() * Math.PI * 2
-
-  useFrame((state) => {
-    if (!meshRef.current || !glowRef.current) return
-    const t = state.clock.elapsedTime * pulseSpeed + phase
-    const pulse = 0.6 + Math.sin(t) * 0.4
-    meshRef.current.scale.setScalar(0.8 + Math.sin(t * 0.5) * 0.2)
-    glowRef.current.material.opacity = pulse * 0.25
-    const yOff = Math.sin(state.clock.elapsedTime * 0.4 + index) * 0.03
-    meshRef.current.position.y = position[1] + yOff
-    glowRef.current.position.y = position[1] + yOff
-  })
-
-  return (
-    <group>
-      <mesh ref={glowRef} position={position}>
-        <sphereGeometry args={[0.2, 16, 16]} />
-        <meshBasicMaterial color="#F97316" transparent opacity={0.2} />
-      </mesh>
-      <mesh ref={meshRef} position={position}>
-        <sphereGeometry args={[0.06, 12, 12]} />
-        <meshStandardMaterial
-          color="#F5EDD6"
-          emissive="#F97316"
-          emissiveIntensity={0.6}
-          metalness={0.3}
-          roughness={0.2}
-        />
-      </mesh>
-    </group>
-  )
-}
-
-function ConnectionLine({ start, end, phase }) {
-  const ref = useRef()
-
-  useFrame((state) => {
-    if (!ref.current) return
-    const pulse = 0.15 + Math.sin(state.clock.elapsedTime * 0.5 + phase) * 0.1
-    ref.current.material.opacity = pulse
-  })
-
-  return (
-    <line ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={2}
-          array={new Float32Array([start[0], start[1], start[2], end[0], end[1], end[2]])}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <lineBasicMaterial color="#F97316" transparent opacity={0.1} />
-    </line>
-  )
-}
-
-function SkillsUniverse() {
+function Universe() {
   const groupRef = useRef()
 
-  const { nodes, connections } = useMemo(() => {
-    const n = allSkills.length
-    const radius = 3.5
-    const nodes = []
-    const positions = []
-
-    allSkills.forEach((skill, i) => {
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.acos(2 * Math.random() - 1)
-      const r = radius * (0.6 + Math.random() * 0.4)
-      const x = Math.sin(phi) * Math.cos(theta) * r
-      const y = Math.sin(phi) * Math.sin(theta) * r * 0.6
-      const z = Math.cos(phi) * r * 0.5
-      nodes.push({ skill, pos: [x, y, z], index: i })
-      positions.push({ x, y, z })
+  const clusterData = useMemo(() => {
+    return projects.map((proj, ci) => {
+      const angle = (ci / projects.length) * Math.PI * 2 - Math.PI / 2
+      const cx = Math.cos(angle) * 3.8
+      const cy = Math.sin(angle * 2) * 0.6
+      const cz = Math.sin(angle) * 1.5
+      const orbit = proj.skills.map(() => ({
+        theta: Math.random() * Math.PI * 2,
+        phi: Math.acos(2 * Math.random() - 1),
+        speed: 0.12 + Math.random() * 0.2,
+        osc: Math.random() * Math.PI * 2,
+      }))
+      return { proj, cx, cy, cz, orbit, worldPositions: proj.skills.map(() => new THREE.Vector3()) }
     })
-
-    const conn = []
-    const connectionSet = new Set()
-
-    for (let i = 0; i < n; i++) {
-      const dists = []
-      for (let j = 0; j < n; j++) {
-        if (i === j) continue
-        const dx = positions[i].x - positions[j].x
-        const dy = positions[i].y - positions[j].y
-        const dz = positions[i].z - positions[j].z
-        const d = Math.sqrt(dx * dx + dy * dy + dz * dz)
-        dists.push({ idx: j, dist: d })
-      }
-      dists.sort((a, b) => a.dist - b.dist)
-      const neighbors = dists.slice(0, 4)
-      neighbors.forEach((nbr) => {
-        const key = Math.min(i, nbr.idx) + '-' + Math.max(i, nbr.idx)
-        if (!connectionSet.has(key)) {
-          connectionSet.add(key)
-          conn.push({
-            start: [positions[i].x, positions[i].y, positions[i].z],
-            end: [positions[nbr.idx].x, positions[nbr.idx].y, positions[nbr.idx].z],
-            phase: Math.random() * Math.PI * 2,
-          })
-        }
-      })
-    }
-
-    return { nodes, connections: conn }
   }, [])
 
+  const possibleConnections = useMemo(() => {
+    const conns = []
+    for (let ci = 0; ci < projects.length; ci++) {
+      for (let cj = ci + 1; cj < projects.length; cj++) {
+        for (let si = 0; si < projects[ci].skills.length; si++) {
+          for (let sj = 0; sj < projects[cj].skills.length; sj++) {
+            if (projects[ci].skills[si] === projects[cj].skills[sj]) {
+              conns.push({ ci, si, cj, sj, phase: Math.random() * Math.PI * 2 })
+            }
+          }
+        }
+      }
+    }
+    return conns
+  }, [])
+
+  const lineRefs = useRef([])
+
   useFrame((state, delta) => {
-    if (!groupRef.current) return
-    groupRef.current.rotation.y += delta * 0.04
-    groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.02) * 0.04
+    const dt = Math.min(delta, 0.05)
+    const t = state.clock.elapsedTime
+
+    clusterData.forEach((cd, ci) => {
+      cd.cx += Math.sin(t * 0.08 + ci) * 0.003
+      cd.cy += Math.cos(t * 0.1 + ci * 0.7) * 0.003
+      cd.cz += Math.sin(t * 0.06 + ci * 1.3) * 0.003
+    })
+
+    for (let i = 0; i < clusterData.length; i++) {
+      for (let j = i + 1; j < clusterData.length; j++) {
+        const a = clusterData[i], b = clusterData[j]
+        const dx = a.cx - b.cx, dy = a.cy - b.cy, dz = a.cz - b.cz
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
+        const minDist = 3.0
+        if (dist < minDist && dist > 0.001) {
+          const force = (minDist - dist) / minDist * 0.008
+          const invDist = 1 / dist
+          a.cx += dx * invDist * force; a.cy += dy * invDist * force; a.cz += dz * invDist * force
+          b.cx -= dx * invDist * force; b.cy -= dy * invDist * force; b.cz -= dz * invDist * force
+        }
+      }
+    }
+
+    clusterData.forEach((cd) => {
+      cd.proj.skills.forEach((_, si) => {
+        const o = cd.orbit[si]
+        o.theta += dt * o.speed
+        o.phi += dt * o.speed * 0.3
+        const r = 0.7 + Math.sin(t * 0.25 + o.osc) * 0.12
+        const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
+        const ly = Math.cos(o.phi) * r * 0.4 + Math.sin(t * 0.15 + o.osc) * 0.08
+        const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
+        cd.worldPositions[si].set(cd.cx + lx, cd.cy + ly, cd.cz + lz)
+      })
+    })
+
+    const refs = lineRefs.current
+    let lineIdx = 0
+    possibleConnections.forEach((conn) => {
+      const posA = clusterData[conn.ci].worldPositions[conn.si]
+      const posB = clusterData[conn.cj].worldPositions[conn.sj]
+      const dist = posA.distanceTo(posB)
+      if (dist < 2.0 && lineIdx < refs.length) {
+        const line = refs[lineIdx]
+        if (line) {
+          const arr = line.geometry.attributes.position.array
+          arr[0] = posA.x; arr[1] = posA.y; arr[2] = posA.z
+          arr[3] = posB.x; arr[4] = posB.y; arr[5] = posB.z
+          line.geometry.attributes.position.needsUpdate = true
+          const opacity = Math.max(0.05, (1 - dist / 2.0) * 0.6)
+          const glow = 0.3 + Math.sin(t * 0.8 + conn.phase) * 0.2
+          line.material.opacity = opacity * glow
+          line.visible = true
+        }
+        lineIdx++
+      }
+    })
+    for (let i = lineIdx; i < refs.length; i++) {
+      if (refs[i]) refs[i].visible = false
+    }
   })
 
+  const lineCount = possibleConnections.length
+
   return (
-    <group ref={groupRef} position={[0, 0, 0]}>
-      {connections.map((conn, i) => (
-        <ConnectionLine key={i} start={conn.start} end={conn.end} phase={conn.phase} />
+    <group ref={groupRef}>
+      {clusterData.map((cd, ci) => (
+        <group key={ci}>
+          {cd.proj.skills.map((skill, si) => {
+            const o = cd.orbit[si]
+            const r = 0.7
+            const lx = Math.cos(o.theta) * Math.sin(o.phi) * r
+            const ly = Math.cos(o.phi) * r * 0.4
+            const lz = Math.sin(o.theta) * Math.sin(o.phi) * r
+            const initPos = [lx, ly, lz]
+            return (
+              <group key={si} position={initPos}>
+                <mesh>
+                  <sphereGeometry args={[0.07, 12, 12]} />
+                  <meshStandardMaterial color={cd.proj.color} emissive={cd.proj.color} emissiveIntensity={0.5} metalness={0.3} roughness={0.2} />
+                </mesh>
+                <Text position={[0, -0.12, 0]} fontSize={0.035} color="#A3A3A3" anchorX="center" anchorY="top" maxWidth={0.5}>
+                  {skill}
+                </Text>
+              </group>
+            )
+          })}
+          <group position={[0, -1.0, 0]}>
+            <Text fontSize={0.06} color={cd.proj.color} anchorX="center" anchorY="top" fontWeight={700}>
+              {cd.proj.name}
+            </Text>
+          </group>
+        </group>
       ))}
-      {nodes.map((node) => (
-        <SkillParticle key={node.index} position={node.pos} label={node.skill} index={node.index} />
+
+      {Array.from({ length: lineCount }).map((_, i) => (
+        <line key={i} ref={(el) => { if (el) lineRefs.current[i] = el }}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" count={2} array={new Float32Array(6)} itemSize={3} />
+          </bufferGeometry>
+          <lineBasicMaterial color="#F97316" transparent opacity={0} />
+        </line>
       ))}
     </group>
   )
@@ -145,7 +162,7 @@ function SkillsUniverse() {
 export default function SkillsNetwork() {
   return (
     <Canvas
-      camera={{ position: [0, 0.5, 6], fov: 50, near: 0.1, far: 15 }}
+      camera={{ position: [0, 0.5, 7.5], fov: 45, near: 0.1, far: 25 }}
       dpr={[0.8, 1.2]}
       gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       style={{ background: 'transparent' }}
@@ -154,9 +171,9 @@ export default function SkillsNetwork() {
         <ambientLight intensity={0.2} />
         <directionalLight position={[2, 3, 4]} intensity={0.5} color="#F97316" />
         <directionalLight position={[-2, -1, -2]} intensity={0.2} color="#F5EDD6" />
-        <SkillsUniverse />
+        <Universe />
         <EffectComposer>
-          <Bloom luminanceThreshold={0.1} luminanceSmoothing={0.85} intensity={0.4} mipmapBlur />
+          <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={0.5} mipmapBlur />
         </EffectComposer>
         <AdaptiveDpr pixelated />
       </Suspense>
