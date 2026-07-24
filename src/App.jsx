@@ -3,6 +3,7 @@ import Navbar from './components/portfolio/Navbar'
 import HeroSection from './components/portfolio/HeroSection'
 import SkillsSection from './components/portfolio/SkillsSection'
 import ServicesSection from './components/portfolio/ServicesSection'
+import BrochureSection from './components/portfolio/BrochureSection'
 import ProjectsSection from './components/portfolio/ProjectsSection'
 import FAQSection from './components/portfolio/FAQSection'
 import CTASection from './components/portfolio/CTASection'
@@ -23,6 +24,7 @@ export default function App() {
         <HeroSection />
         <SkillsSection />
         <ServicesSection />
+        <BrochureSection />
         <ProjectsSection />
         <FAQSection />
         <CTASection />

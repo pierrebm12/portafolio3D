@@ -5,7 +5,7 @@ import ProjectModal from './ProjectModal'
 
 const projects = [
   { id: 1, title: 'Jeff Buitrago — Música en Vivo', category: 'Web Development', desc: 'Plataforma musical profesional con reproductor integrado, galería de videos, agenda de eventos en vivo y sistema de contacto directo.',
-    image: 'https://jeffmusic01.com/_next/image?url=%2Fimages%2Fjefflogo1.webp&w=1080&q=75', link: 'https://jeffmusic01.com/', tags: ['React', 'Next.js', 'Node.js', 'Música'] },
+    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80', link: 'https://jeffmusic01.com/', tags: ['React', 'Next.js', 'Node.js', 'Música'] },
   { id: 2, title: 'Devtro 3D', category: 'Web Development', desc: 'Landing page inmersiva con experiencia 3D, portfolio interactivo y diseño multisensorial para agencia de desarrollo y marketing.',
     image: 'https://devtro3d.up.railway.app/_next/image?url=%2Fimages%2Fdevtro-logo.webp&w=1080&q=75', link: 'https://devtro3d.up.railway.app/', tags: ['React', 'Three.js', 'Tailwind', '3D'] },
   { id: 3, title: 'Móvil Express CO', category: 'E-Commerce', desc: 'E-commerce completo para venta de dispositivos móviles con catálogo, carrito de compras, pasarela de pago MercadoPago y panel administrativo.',
