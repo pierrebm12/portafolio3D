@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { FaInstagram, FaFacebook, FaWhatsapp, FaLinkedin } from 'react-icons/fa'
+import { HashLink } from 'react-router-hash-link'
 
 export default function FooterPortfolio() {
   const year = new Date().getFullYear()
@@ -23,7 +24,7 @@ export default function FooterPortfolio() {
             <h4 className="text-sm font-['DM_Sans',sans-serif] font-semibold text-[#F5EDD6] uppercase tracking-wider mb-4">Servicios</h4>
             <ul className="space-y-3">
               {['Desarrollo Web', 'Apps Móviles', 'Agentes IA', 'Marketing Redes', 'Consultoría'].map((s) => (
-                <li key={s}><a href="#servicios" className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] hover:text-[#F97316] transition-colors">{s}</a></li>
+                <li key={s}><HashLink smooth to="/#servicios" className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] hover:text-[#F97316] transition-colors">{s}</HashLink></li>
               ))}
             </ul>
           </div>

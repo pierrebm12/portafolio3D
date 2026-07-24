@@ -83,7 +83,7 @@ export default function ServicesSection() {
         </div>
         <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} className="mt-20 text-center">
-          <a href="#contacto"
+          <a href="/#contacto"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#F97316] text-[#0A0A0A] font-['DM_Sans',sans-serif] font-bold rounded-full hover:bg-[#EA580C] transition-all duration-300 hover:shadow-xl hover:shadow-[#F97316]/25 group">
             ¿Necesitas algo personalizado? <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
           </a>

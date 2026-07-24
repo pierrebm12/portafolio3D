@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { HiChevronDown } from 'react-icons/hi'
+import { HashLink } from 'react-router-hash-link'
 
 const faqs = [
   { q: '¿Cuánto tiempo toma desarrollar un sitio web?', a: 'Dependiendo de la complejidad, un sitio web puede tomar de 1 a 4 semanas. Las landing pages simples pueden estar listas en 5-7 días hábiles, mientras que proyectos más complejos como e-commerce pueden tomar de 3 a 6 semanas.' },
@@ -57,7 +58,7 @@ export default function FAQSection() {
         </motion.div>
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }} className="mt-10 text-center">
           <p className="text-[#A3A3A3] font-['DM_Sans',sans-serif] text-sm">¿No encuentras lo que buscas?{' '}
-            <a href="#contacto" className="text-[#F97316] hover:underline font-medium">Escríbenos directo</a></p>
+            <HashLink smooth to="/#contacto" className="text-[#F97316] hover:underline font-medium">Escríbenos directo</HashLink></p>
         </motion.div>
       </div>
     </section>

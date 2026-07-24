@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { AdaptiveDpr } from '@react-three/drei'
+import { AdaptiveDpr, Text } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
@@ -145,17 +145,22 @@ function OrbitRing({ radius }) {
 
 function Sun() {
   const meshRef = useRef()
+  const textRef = useRef()
   const glowRef = useRef()
   const glowOuterRef = useRef()
-  const { isMobile } = useDevice()
 
   useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += delta * 0.15
-      meshRef.current.rotation.y += delta * 0.2
-      meshRef.current.rotation.z += delta * 0.05
-    }
     const t = state.clock.elapsedTime
+    if (meshRef.current) {
+      meshRef.current.rotation.x += delta * 0.1
+      meshRef.current.rotation.y += delta * 0.15
+      meshRef.current.position.y = Math.sin(t * 0.3) * 0.08
+    }
+    if (textRef.current) {
+      textRef.current.position.y = Math.sin(t * 0.4) * 0.06
+      const s = 1 + Math.sin(t * 0.2) * 0.02
+      textRef.current.scale.setScalar(s)
+    }
     if (glowRef.current) {
       const pulse = 0.7 + Math.sin(t * 0.5) * 0.3
       glowRef.current.material.opacity = pulse * 0.12
@@ -167,9 +172,6 @@ function Sun() {
     }
   })
 
-  const knotSegs = isMobile ? 48 : 96
-  const knotTubes = isMobile ? 8 : 16
-
   return (
     <group>
       <mesh ref={glowOuterRef} scale={[5, 5, 5]}>
@@ -180,16 +182,43 @@ function Sun() {
         <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial color="#F97316" transparent opacity={0.15} />
       </mesh>
-      <mesh ref={meshRef} scale={1.2}>
-        <torusKnotGeometry args={[0.5, 0.2, knotSegs, knotTubes]} />
+      <mesh ref={meshRef} scale={1}>
+        <sphereGeometry args={[0.7, 24, 24]} />
         <meshStandardMaterial
-          color="#F97316" emissive="#EA580C" emissiveIntensity={0.8}
-          metalness={0.9} roughness={0.1} envMapIntensity={2.5}
+          color="#EA580C" emissive="#F97316" emissiveIntensity={0.3}
+          metalness={0.2} roughness={0.8} transparent opacity={0.15}
         />
       </mesh>
+      <Text
+        ref={textRef}
+        font="/fonts/Anton-Regular.ttf"
+        position={[0, 0, 0]}
+        fontSize={0.35}
+        color="#F5EDD6"
+        anchorX="center"
+        anchorY="middle"
+        fontWeight={400}
+        letterSpacing={0.05}
+      >
+        DEV
+        <meshStandardMaterial color="#F5EDD6" emissive="#F5EDD6" emissiveIntensity={0.2} />
+      </Text>
+      <Text
+        position={[0.32, -0.04, 0]}
+        font="/fonts/Anton-Regular.ttf"
+        fontSize={0.35}
+        color="#F97316"
+        anchorX="left"
+        anchorY="middle"
+        fontWeight={400}
+        letterSpacing={0.05}
+      >
+        TRO
+        <meshStandardMaterial color="#F97316" emissive="#F97316" emissiveIntensity={0.6} />
+      </Text>
       <mesh>
-        <icosahedronGeometry args={[0.15, 0]} />
-        <meshBasicMaterial color="#F5EDD6" transparent opacity={0.3} />
+        <icosahedronGeometry args={[0.12, 0]} />
+        <meshBasicMaterial color="#F5EDD6" transparent opacity={0.2} />
       </mesh>
     </group>
   )
@@ -231,7 +260,7 @@ function Universe({ mouse }) {
   )
 }
 
-export default function HeroScene3D({ mouse, scroll }) {
+export default function HeroScene3D({ mouse }) {
   const { isMobile } = useDevice()
 
   return (

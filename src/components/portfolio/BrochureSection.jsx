@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useInView, useScroll, useTransform } from 'framer-motion'
+import { HashLink } from 'react-router-hash-link'
 import {
   HiCode, HiChip, HiSupport, HiServer, HiDatabase, HiLink, HiShoppingCart,
   HiCog, HiSpeakerphone, HiTrendingUp, HiUsers, HiShieldCheck,
@@ -415,7 +416,17 @@ const categoryDetails = {
   'software-diseno': { desc: 'Herramientas profesionales para diseño y modelado', icon: HiCollection },
 }
 
-function CategoryCard({ category, index, isOpen, onToggle, searchTerm, onServiceClick }) {
+function HighlightText({ text, highlight }) {
+  if (!highlight) return text
+  const parts = text.split(new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'))
+  return parts.map((part, i) =>
+    part.toLowerCase() === highlight.toLowerCase()
+      ? <span key={i} className="text-[#F97316] font-semibold">{part}</span>
+      : part
+  )
+}
+
+function CategoryCard({ category, index, isOpen, onToggle, searchTerm, onServiceClick, matchCount }) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-60px' })
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
@@ -437,11 +448,11 @@ function CategoryCard({ category, index, isOpen, onToggle, searchTerm, onService
   const Icon = category.icon
 
   return (
-    <motion.div
+    <motion.div layout
       ref={ref}
       initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: index * 0.06 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: index * 0.04 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -449,42 +460,61 @@ function CategoryCard({ category, index, isOpen, onToggle, searchTerm, onService
         transformStyle: 'preserve-3d'
       }}
       className={`group relative bg-[#121212] border rounded-2xl overflow-hidden transition-all duration-500 ${
-        isOpen ? 'border-[#F97316]/30 shadow-2xl shadow-[#F97316]/10' : 'border-[#F97316]/10 hover:border-[#F97316]/30 hover:shadow-xl hover:shadow-[#F97316]/5'
+        isOpen ? 'border-[#F97316]/30 shadow-2xl shadow-[#F97316]/10' : filteredServices.length === 0 ? 'opacity-70 border-[#F97316]/5' : 'border-[#F97316]/10 hover:border-[#F97316]/30 hover:shadow-xl hover:shadow-[#F97316]/5'
       }`}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${category.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isOpen ? 'opacity-100' : ''}`} />
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: category.color }} />
 
+      {filteredServices.length > 0 && matchCount > 0 && searchTerm && (
+        <div className="absolute top-3 right-12 z-10">
+          <span className="px-2 py-0.5 text-[10px] font-['DM_Sans',sans-serif] font-semibold bg-[#F97316] text-[#0A0A0A] rounded-full">
+            {filteredServices.length} match{filteredServices.length !== 1 ? 'es' : ''}
+          </span>
+        </div>
+      )}
+
       <div className="relative z-10 p-6">
-        <div className="flex items-start justify-between gap-4 mb-5">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-current text-[#0A0A0A]' : 'bg-current/10 text-current group-hover:bg-current/20'}`} style={{ backgroundColor: category.color }}>
-            <Icon className="text-current" size={24} style={{ color: category.color }} />
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-4">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-current text-[#0A0A0A]' : 'bg-current/10 text-current group-hover:bg-current/20'}`} style={{ backgroundColor: category.color }}>
+              <Icon className="text-current" size={28} style={{ color: category.color }} />
+            </div>
+            <div>
+              <span className="text-[10px] font-['DM_Sans',sans-serif] tracking-[0.2em] uppercase text-current mb-1 block" style={{ color: category.color }}>
+                {index + 1 < 10 ? `0${index + 1}` : index + 1} — Categoría
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-['Anton',sans-serif] text-[#F5EDD6] tracking-tight group-hover:text-current transition-colors">{category.label}</h3>
+            </div>
           </div>
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onToggle}
-            className="shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[#A3A3A3] hover:text-[#F97316] hover:bg-white/10 transition-all"
+            className="shrink-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#A3A3A3] hover:text-[#F97316] hover:bg-white/10 transition-all"
             aria-label={isOpen ? `Cerrar ${category.label}` : `Expandir ${category.label}`}
           >
             <motion.span
               animate={{ rotate: isOpen ? 180 : 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <HiChevronDown size={16} />
+              <HiChevronDown size={18} />
             </motion.span>
           </motion.button>
         </div>
 
-        <div>
-          <span className="text-[10px] font-['DM_Sans',sans-serif] tracking-[0.2em] uppercase text-current mb-2 block" style={{ color: category.color }}>
-            {index + 1 < 10 ? `0${index + 1}` : index + 1} — Categoría
-          </span>
-          <h3 className="text-xl font-['Anton',sans-serif] text-[#F5EDD6] tracking-tight mb-2 group-hover:text-current transition-colors">{category.label}</h3>
-          <p className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] mb-4 line-clamp-1">{categoryDetails[category.id]?.desc || ''}</p>
-          <div className="flex items-center gap-2 text-xs font-['DM_Sans',sans-serif] text-[#F97316]">
-            <HiStar size={12} /> {filteredServices.length} {filteredServices.length === 1 ? 'servicio' : 'servicios'}
-            {searchTerm && <span className="text-[#A3A3A3]">(filtrados)</span>}
+        <div className="pl-0 sm:pl-[60px]">
+          <p className="text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3] mb-4 leading-relaxed">{categoryDetails[category.id]?.desc || ''}</p>
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2 text-xs font-['DM_Sans',sans-serif]">
+              <HiStar size={12} className="text-[#F97316]" />
+              <span className="text-[#F5EDD6] font-semibold">{filteredServices.length}</span>
+              <span className="text-[#A3A3A3]">de {category.services.length} servicios</span>
+            </div>
+            <div className="w-px h-3 bg-white/10" />
+            <a href="#" onClick={(e) => { e.preventDefault(); onToggle() }} className="text-xs font-['DM_Sans',sans-serif] text-[#F97316] hover:underline">
+              {isOpen ? 'Colapsar' : 'Ver todos'}
+            </a>
           </div>
         </div>
       </div>
@@ -498,7 +528,15 @@ function CategoryCard({ category, index, isOpen, onToggle, searchTerm, onService
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden border-t border-white/5 bg-[#0A0A0A]/50"
           >
-            <div className="p-6 pt-0">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-['DM_Sans',sans-serif] text-[#A3A3A3] tracking-[0.1em] uppercase">
+                  Servicios {searchTerm && `(coinciden: ${filteredServices.length})`}
+                </span>
+                <span className="text-[10px] font-['DM_Sans',sans-serif] text-[#A3A3A3]">
+                  Mostrando {filteredServices.length} de {category.services.length}
+                </span>
+              </div>
               <div className="grid sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                 {filteredServices.map((service, si) => (
                   <motion.button
@@ -506,23 +544,30 @@ function CategoryCard({ category, index, isOpen, onToggle, searchTerm, onService
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: si * 0.02 }}
-                    whileHover={{ x: 8 }}
+                    whileHover={{ x: 8, scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => onServiceClick(service, category)}
-                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-left border border-white/5 hover:border-current/30 cursor-pointer"
+                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/10 transition-all text-left border border-white/5 hover:border-current/30 cursor-pointer"
                     style={{ borderColor: category.color }}
                   >
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-current/10 group-hover:bg-current/20 transition-all" style={{ backgroundColor: category.color }}>
                       <HiArrowRight className="text-current" size={14} style={{ color: category.color }} />
                     </div>
-                    <span className="text-sm font-['DM_Sans',sans-serif] text-[#F5EDD6] group-hover:text-current transition-colors">{service}</span>
+                    <span className="text-sm font-['DM_Sans',sans-serif] text-[#F5EDD6] group-hover:text-current transition-colors leading-snug">
+                      <HighlightText text={service} highlight={searchTerm} />
+                    </span>
                   </motion.button>
                 ))}
               </div>
               {filteredServices.length === 0 && (
                 <div className="py-8 text-center">
-                  <HiSearch className="text-[#A3A3A3] mx-auto mb-2" size={24} />
-                  <p className="text-[#A3A3A3] font-['DM_Sans',sans-serif]">No se encontraron servicios para "{searchTerm}"</p>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+                    <HiSearch className="text-[#A3A3A3] mx-auto mb-3" size={32} />
+                    <p className="text-[#A3A3A3] font-['DM_Sans',sans-serif]">No hay servicios que coincidan con "<span className="text-[#F97316]">{searchTerm}</span>"</p>
+                    <button onClick={() => onToggle()} className="mt-3 text-xs font-['DM_Sans',sans-serif] text-white/40 hover:text-[#F97316] transition-colors">
+                      Colapsar categoría
+                    </button>
+                  </motion.div>
                 </div>
               )}
             </div>
@@ -555,53 +600,133 @@ function ServiceModal({ service, category, onClose }) {
           exit={{ opacity: 0, scale: 0.9, y: 40 }}
           transition={{ type: 'spring', damping: 28, stiffness: 260 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#121212] border border-current/20 rounded-2xl shadow-2xl shadow-black/60"
+          className="relative w-full max-w-2xl bg-[#121212] border border-current/20 rounded-2xl shadow-2xl shadow-black/60"
           style={{ borderColor: category.color }}
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-[#121212] to-transparent border-b border-white/5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-current/10" style={{ backgroundColor: category.color }}>
-                <category.icon className="text-current" size={20} style={{ color: category.color }} />
+          <div className="max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-[#121212] to-transparent border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-current/10" style={{ backgroundColor: category.color }}>
+                  <category.icon className="text-current" size={20} style={{ color: category.color }} />
+                </div>
+                <span className="text-xs font-['DM_Sans',sans-serif] tracking-[0.15em] uppercase text-current" style={{ color: category.color }}>{category.label}</span>
               </div>
-              <span className="text-xs font-['DM_Sans',sans-serif] tracking-[0.15em] uppercase text-current" style={{ color: category.color }}>{category.label}</span>
+              <button onClick={onClose}
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#F5EDD6] hover:bg-current hover:text-[#0A0A0A] transition-all"
+                style={{ backgroundColor: category.color }}
+                aria-label="Cerrar modal"
+              >
+                <HiX size={18} />
+              </button>
             </div>
-            <button onClick={onClose}
-              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#F5EDD6] hover:bg-current hover:text-[#0A0A0A] transition-all"
-              style={{ backgroundColor: category.color }}
-              aria-label="Cerrar modal"
-            >
-              <HiX size={18} />
-            </button>
+            <div className="p-6 pb-8">
+              <h2 id="modal-title" className="text-2xl sm:text-3xl font-['Anton',sans-serif] text-[#F5EDD6] tracking-tight mb-4">{service}</h2>
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="px-3 py-1 bg-current/10 text-current text-xs font-['DM_Sans',sans-serif] rounded-full" style={{ backgroundColor: category.color, color: category.color }}>
+                  {category.label}
+                </span>
+              </div>
+              <div className="space-y-4 text-[#A3A3A3] font-['DM_Sans',sans-serif] leading-relaxed">
+                <p>Este servicio forma parte de nuestra categoría <strong className="text-[#F5EDD6]">{category.label}</strong>. Incluye:</p>
+                <ul className="list-disc list-inside space-y-2 pl-4">
+                  <li>Análisis de requisitos y consultoría inicial</li>
+                  <li>Diseño y arquitectura de la solución</li>
+                  <li>Desarrollo e implementación con mejores prácticas</li>
+                  <li>Pruebas de calidad y optimización</li>
+                  <li>Despliegue y puesta en marcha</li>
+                  <li>Capacitación y documentación</li>
+                  <li>Soporte post-lanzamiento (30 días incluidos)</li>
+                </ul>
+                <div className="pt-4 border-t border-white/10 flex flex-wrap gap-3">
+                  <button className="px-4 py-2 bg-current text-[#0A0A0A] font-['DM_Sans',sans-serif] font-semibold rounded-full hover:opacity-90 transition-opacity" style={{ backgroundColor: category.color }}>
+                    <HiArrowRight size={16} className="inline-block ml-1" /> Cotizar
+                  </button>
+                  <button className="px-4 py-2 border border-white/10 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium rounded-full hover:border-current hover:text-current transition-all" style={{ borderColor: category.color }}>
+                    <HiDownload size={16} className="inline-block mr-1" /> Detalles
+                  </button>
+                  <button className="px-4 py-2 border border-white/10 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium rounded-full hover:border-current hover:text-current transition-all" style={{ borderColor: category.color }}>
+                    <HiPrinter size={16} className="inline-block mr-1" /> Imprimir
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="p-6 pb-8">
-            <h2 id="modal-title" className="text-2xl sm:text-3xl font-['Anton',sans-serif] text-[#F5EDD6] tracking-tight mb-4">{service}</h2>
-            <div className="flex flex-wrap gap-2 mb-6">
-              <span className="px-3 py-1 bg-current/10 text-current text-xs font-['DM_Sans',sans-serif] rounded-full" style={{ backgroundColor: category.color, color: category.color }}>
-                {category.label}
-              </span>
-            </div>
-            <div className="space-y-4 text-[#A3A3A3] font-['DM_Sans',sans-serif] leading-relaxed">
-              <p>Este servicio forma parte de nuestra categoría <strong className="text-[#F5EDD6]">{category.label}</strong>. Incluye:</p>
-              <ul className="list-disc list-inside space-y-2 pl-4">
-                <li>Análisis de requisitos y consultoría inicial</li>
-                <li>Diseño y arquitectura de la solución</li>
-                <li>Desarrollo e implementación con mejores prácticas</li>
-                <li>Pruebas de calidad y optimización</li>
-                <li>Despliegue y puesta en marcha</li>
-                <li>Capacitación y documentación</li>
-                <li>Soporte post-lanzamiento (30 días incluidos)</li>
-              </ul>
-              <div className="pt-4 border-t border-white/10 flex flex-wrap gap-3">
-                <button className="px-4 py-2 bg-current text-[#0A0A0A] font-['DM_Sans',sans-serif] font-semibold rounded-full hover:opacity-90 transition-opacity" style={{ backgroundColor: category.color }}>
-                  <HiArrowRight size={16} className="inline-block ml-1" /> Cotizar
-                </button>
-                <button className="px-4 py-2 border border-white/10 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium rounded-full hover:border-current hover:text-current transition-all" style={{ borderColor: category.color }}>
-                  <HiDownload size={16} className="inline-block mr-1" /> Detalles
-                </button>
-                <button className="px-4 py-2 border border-white/10 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium rounded-full hover:border-current hover:text-current transition-all" style={{ borderColor: category.color }}>
-                  <HiPrinter size={16} className="inline-block mr-1" /> Imprimir
-                </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+function GroupModal({ group, categories, onClose }) {
+  if (!group) return null
+  const totalServices = categories.reduce((acc, c) => acc + c.services.length, 0)
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="absolute inset-0 bg-[#0A0A0A]/95 backdrop-blur-md" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 40 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 40 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-4xl bg-[#121212] border border-[#F97316]/20 rounded-2xl shadow-2xl shadow-black/60"
+        >
+          <div className="max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-[#121212] to-transparent border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#F97316]/10">
+                  <group.icon className="text-[#F97316]" size={24} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-['DM_Sans',sans-serif] tracking-[0.2em] uppercase text-[#F97316]">{group.label}</span>
+                  <h2 className="text-2xl font-['Anton',sans-serif] text-[#F5EDD6] tracking-tight">{group.title}</h2>
+                </div>
               </div>
+              <button onClick={onClose}
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#F5EDD6] hover:bg-[#F97316] hover:text-[#0A0A0A] transition-all"
+                aria-label="Cerrar">
+                <HiX size={18} />
+              </button>
+            </div>
+            <div className="p-6 pb-8 space-y-6">
+              <div className="flex items-center gap-3 text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3]">
+                <HiBookOpen size={16} className="text-[#F97316]" />
+                <span><strong className="text-[#F5EDD6]">{totalServices}</strong> servicios en <strong className="text-[#F5EDD6]">{categories.length}</strong> categorías</span>
+              </div>
+              {categories.map((cat) => (
+                <div key={cat.id} className="bg-[#0A0A0A]/60 rounded-2xl border border-white/5 overflow-hidden">
+                  <div className="flex items-center gap-3 p-4" style={{ borderLeft: `3px solid ${cat.color}` }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-current/10" style={{ backgroundColor: cat.color }}>
+                      <cat.icon className="text-current" size={20} style={{ color: cat.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-['Anton',sans-serif] text-[#F5EDD6] tracking-tight">{cat.label}</h3>
+                      <p className="text-xs font-['DM_Sans',sans-serif] text-[#A3A3A3]">{categoryDetails[cat.id]?.desc || ''}</p>
+                    </div>
+                    <span className="text-xs font-['DM_Sans',sans-serif] text-[#A3A3A3] whitespace-nowrap">{cat.services.length} servicios</span>
+                  </div>
+                  <div className="px-4 pb-4 pt-1">
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      {cat.services.map((svc, si) => (
+                        <div key={si} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] text-sm font-['DM_Sans',sans-serif] text-[#A3A3A3]">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                          {svc}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -616,8 +741,29 @@ export default function BrochureSection() {
   const [searchTerm, setSearchTerm] = useState('')
   const [modalService, setModalService] = useState(null)
   const [modalCategory, setModalCategory] = useState(null)
+  const [groupModal, setGroupModal] = useState(null)
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] })
   const bgOpacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 0.02, 0.02, 0])
+
+  const softwareGroup = {
+    label: 'Desarrollo de Software',
+    title: 'Servicios de Desarrollo',
+    icon: HiCode,
+    categories: categories.filter(c => ![
+      'diseno-producto', 'empaques-etiquetas', 'identidad-visual', 'diseno-grafico',
+      'redes-visual', 'modelado-3d', 'interiorismo', 'consultoria-diseno', 'software-diseno'
+    ].includes(c.id))
+  }
+
+  const designGroup = {
+    label: 'Diseño Industrial',
+    title: 'Servicios de Diseño',
+    icon: HiCube,
+    categories: categories.filter(c => [
+      'diseno-producto', 'empaques-etiquetas', 'identidad-visual', 'diseno-grafico',
+      'redes-visual', 'modelado-3d', 'interiorismo', 'consultoria-diseno', 'software-diseno'
+    ].includes(c.id))
+  }
 
   const toggleCategory = (id) => {
     setOpenCategory(openCategory === id ? null : id)
@@ -629,6 +775,23 @@ export default function BrochureSection() {
   }
 
   const totalServices = categories.reduce((acc, cat) => acc + cat.services.length, 0)
+
+  const sortedCategories = useMemo(() => {
+    if (!searchTerm) return categories
+    const term = searchTerm.toLowerCase()
+    const withMatches = []
+    const withoutMatches = []
+    for (const cat of categories) {
+      const matchCount = cat.services.filter(s => s.toLowerCase().includes(term)).length
+      if (matchCount > 0) {
+        withMatches.push({ ...cat, matchCount })
+      } else {
+        withoutMatches.push(cat)
+      }
+    }
+    withMatches.sort((a, b) => b.matchCount - a.matchCount)
+    return [...withMatches, ...withoutMatches]
+  }, [searchTerm])
 
   return (
     <section id="broshure" ref={sectionRef} className="relative py-28 sm:py-36 overflow-hidden">
@@ -680,12 +843,40 @@ export default function BrochureSection() {
         </motion.div>
 
         <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="flex flex-wrap items-center justify-center gap-3 mb-12"
+        >
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setGroupModal(softwareGroup)}
+            className="group inline-flex items-center gap-2.5 px-6 py-3 bg-[#F97316]/10 border border-[#F97316]/30 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-semibold text-sm rounded-full hover:bg-[#F97316] hover:text-[#0A0A0A] transition-all duration-300 hover:shadow-lg hover:shadow-[#F97316]/25"
+          >
+            <HiCode size={18} />
+            Desarrollo de Software
+            <HiArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setGroupModal(designGroup)}
+            className="group inline-flex items-center gap-2.5 px-6 py-3 bg-[#14B8A6]/10 border border-[#14B8A6]/30 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-semibold text-sm rounded-full hover:bg-[#14B8A6] hover:text-[#0A0A0A] transition-all duration-300 hover:shadow-lg hover:shadow-[#14B8A6]/25"
+          >
+            <HiCube size={18} />
+            Diseño Industrial
+            <HiArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+        </motion.div>
+
+        <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5"
         >
-          {categories.map((category, index) => (
+          {sortedCategories.map((category, index) => (
             <CategoryCard
               key={category.id}
               category={category}
@@ -694,6 +885,7 @@ export default function BrochureSection() {
               onToggle={() => toggleCategory(category.id)}
               searchTerm={searchTerm}
               onServiceClick={handleServiceClick}
+              matchCount={category.matchCount || 0}
             />
           ))}
         </motion.div>
@@ -707,7 +899,7 @@ export default function BrochureSection() {
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#121212] border border-[#F97316]/20 rounded-full">
             <HiStar className="text-[#F97316]" size={16} />
             <span className="text-sm font-['DM_Sans',sans-serif] text-[#F5EDD6]">¿No encuentras lo que buscas? </span>
-            <a href="#contacto" className="text-[#F97316] hover:underline font-['DM_Sans',sans-serif] font-medium">Solicita un servicio personalizado</a>
+            <HashLink smooth to="/#contacto" className="text-[#F97316] hover:underline font-['DM_Sans',sans-serif] font-medium">Solicita un servicio personalizado</HashLink>
             <HiArrowRight className="text-[#F97316]" size={14} />
           </div>
         </motion.div>
@@ -717,6 +909,11 @@ export default function BrochureSection() {
         service={modalService}
         category={modalCategory}
         onClose={() => { setModalService(null); setModalCategory(null); }}
+      />
+      <GroupModal
+        group={groupModal}
+        categories={groupModal?.categories || []}
+        onClose={() => setGroupModal(null)}
       />
     </section>
   )

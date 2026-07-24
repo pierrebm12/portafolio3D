@@ -82,7 +82,7 @@ export default function HeroSection() {
 
       {sceneReady && (
         <Suspense fallback={null}>
-          <LazyHeroScene mouse={mouse} scroll={scroll} />
+          <LazyHeroScene mouse={mouse} />
         </Suspense>
       )}
 
@@ -157,7 +157,7 @@ export default function HeroSection() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 1.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <MagneticButton href="#contacto"
+            <MagneticButton href="/#contacto"
               className="group relative px-9 py-4 bg-[#F97316] text-[#0A0A0A] font-['DM_Sans',sans-serif] font-bold text-base rounded-full overflow-hidden shadow-lg shadow-[#F97316]/20 hover:shadow-[0_0_50px_rgba(249,115,22,0.3)] transition-shadow duration-300"
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function HeroSection() {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-[#EA580C] to-[#F97316] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </MagneticButton>
-            <a href="#servicios"
+            <a href="/#servicios"
               className="group flex items-center gap-2 px-9 py-4 border border-[#F97316]/30 text-[#F5EDD6] font-['DM_Sans',sans-serif] font-medium text-base rounded-full hover:bg-[#F97316]/10 hover:border-[#F97316]/50 transition-all duration-300"
             >
               Ver Servicios
@@ -194,7 +194,7 @@ export default function HeroSection() {
         transition={{ delay: 2, duration: 0.8 }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10"
       >
-        <motion.a href="#servicios"
+        <motion.a href="/#servicios"
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           className="flex flex-col items-center gap-2 text-[#A3A3A3] hover:text-[#F97316] transition-colors group"
