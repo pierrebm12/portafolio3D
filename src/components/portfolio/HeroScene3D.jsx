@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { AdaptiveDpr, useTexture } from '@react-three/drei'
+import { AdaptiveDpr } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
@@ -145,55 +145,17 @@ function OrbitRing({ radius }) {
 
 function Sun() {
   const meshRef = useRef()
-  const spriteRef = useRef()
   const glowRef = useRef()
   const glowOuterRef = useRef()
-
-  const texture = useMemo(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 256
-    const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, 512, 256)
-
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-
-    const drawGlow = (x, y, color) => {
-      ctx.shadowColor = color
-      ctx.shadowBlur = 30
-    }
-
-    ctx.shadowColor = '#F97316'
-    ctx.shadowBlur = 20
-    ctx.font = 'bold 120px "Anton", sans-serif'
-    ctx.fillStyle = '#F5EDD6'
-    ctx.fillText('DEV', 220, 135)
-
-    ctx.shadowColor = '#F97316'
-    ctx.shadowBlur = 30
-    ctx.fillStyle = '#F97316'
-    ctx.fillText('TRO', 330, 135)
-
-    ctx.shadowBlur = 0
-
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.needsUpdate = true
-    return tex
-  }, [])
+  const { isMobile } = useDevice()
 
   useFrame((state, delta) => {
-    const t = state.clock.elapsedTime
     if (meshRef.current) {
-      meshRef.current.rotation.x += delta * 0.1
-      meshRef.current.rotation.y += delta * 0.15
-      meshRef.current.position.y = Math.sin(t * 0.3) * 0.08
+      meshRef.current.rotation.x += delta * 0.15
+      meshRef.current.rotation.y += delta * 0.2
+      meshRef.current.rotation.z += delta * 0.05
     }
-    if (spriteRef.current) {
-      spriteRef.current.position.y = Math.sin(t * 0.4) * 0.06
-      const s = 1 + Math.sin(t * 0.2) * 0.02
-      spriteRef.current.scale.setScalar(s)
-    }
+    const t = state.clock.elapsedTime
     if (glowRef.current) {
       const pulse = 0.7 + Math.sin(t * 0.5) * 0.3
       glowRef.current.material.opacity = pulse * 0.12
@@ -205,29 +167,29 @@ function Sun() {
     }
   })
 
+  const knotSegs = isMobile ? 48 : 96
+  const knotTubes = isMobile ? 8 : 16
+
   return (
     <group>
-      <mesh ref={glowOuterRef} scale={[5.5, 5.5, 5.5]}>
+      <mesh ref={glowOuterRef} scale={[5, 5, 5]}>
         <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial color="#F97316" transparent opacity={0.06} />
       </mesh>
-      <mesh ref={glowRef} scale={[3.2, 3.2, 3.2]}>
+      <mesh ref={glowRef} scale={[3, 3, 3]}>
         <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial color="#F97316" transparent opacity={0.18} />
+        <meshBasicMaterial color="#F97316" transparent opacity={0.15} />
       </mesh>
-      <mesh ref={meshRef} scale={1.1}>
-        <sphereGeometry args={[0.75, 32, 32]} />
+      <mesh ref={meshRef} scale={1.2}>
+        <torusKnotGeometry args={[0.5, 0.2, knotSegs, knotTubes]} />
         <meshStandardMaterial
-          color="#EA580C" emissive="#F97316" emissiveIntensity={0.4}
-          metalness={0.1} roughness={0.6} transparent opacity={0.2}
+          color="#4A2A16" emissive="#6B4226" emissiveIntensity={0.4}
+          metalness={0.7} roughness={0.4} envMapIntensity={1.5}
         />
       </mesh>
-      <sprite ref={spriteRef} scale={[1.8, 0.9, 1]}>
-        <spriteMaterial map={texture} transparent depthWrite={false} depthTest={false} />
-      </sprite>
       <mesh>
-        <icosahedronGeometry args={[0.12, 0]} />
-        <meshBasicMaterial color="#F5EDD6" transparent opacity={0.2} />
+        <icosahedronGeometry args={[0.15, 0]} />
+        <meshBasicMaterial color="#F5EDD6" transparent opacity={0.3} />
       </mesh>
     </group>
   )
