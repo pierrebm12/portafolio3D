@@ -174,47 +174,53 @@ function Sun() {
 
   return (
     <group>
-      <mesh ref={glowOuterRef} scale={[5, 5, 5]}>
+      <mesh ref={glowOuterRef} scale={[5.5, 5.5, 5.5]}>
         <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial color="#F97316" transparent opacity={0.06} />
       </mesh>
-      <mesh ref={glowRef} scale={[3, 3, 3]}>
+      <mesh ref={glowRef} scale={[3.2, 3.2, 3.2]}>
         <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial color="#F97316" transparent opacity={0.15} />
+        <meshBasicMaterial color="#F97316" transparent opacity={0.18} />
       </mesh>
-      <mesh ref={meshRef} scale={1}>
-        <sphereGeometry args={[0.7, 24, 24]} />
+      <mesh ref={meshRef} scale={1.1}>
+        <sphereGeometry args={[0.75, 32, 32]} />
         <meshStandardMaterial
-          color="#EA580C" emissive="#F97316" emissiveIntensity={0.3}
-          metalness={0.2} roughness={0.8} transparent opacity={0.15}
+          color="#EA580C" emissive="#F97316" emissiveIntensity={0.4}
+          metalness={0.1} roughness={0.6} transparent opacity={0.2}
         />
       </mesh>
       <Text
         ref={textRef}
         font="/fonts/Anton-Regular.ttf"
-        position={[0, 0, 0]}
-        fontSize={0.35}
+        position={[-0.3, 0, 0]}
+        fontSize={0.55}
         color="#F5EDD6"
-        anchorX="center"
+        anchorX="right"
         anchorY="middle"
         fontWeight={400}
-        letterSpacing={0.05}
+        letterSpacing={0.04}
+        outlineWidth={0.02}
+        outlineColor="#F97316"
+        outlineOpacity={0.3}
       >
         DEV
-        <meshStandardMaterial color="#F5EDD6" emissive="#F5EDD6" emissiveIntensity={0.2} />
+        <meshStandardMaterial color="#F5EDD6" emissive="#F5EDD6" emissiveIntensity={0.3} />
       </Text>
       <Text
-        position={[0.32, -0.04, 0]}
+        position={[0.3, 0, 0]}
         font="/fonts/Anton-Regular.ttf"
-        fontSize={0.35}
+        fontSize={0.55}
         color="#F97316"
         anchorX="left"
         anchorY="middle"
         fontWeight={400}
-        letterSpacing={0.05}
+        letterSpacing={0.04}
+        outlineWidth={0.02}
+        outlineColor="#F97316"
+        outlineOpacity={0.5}
       >
         TRO
-        <meshStandardMaterial color="#F97316" emissive="#F97316" emissiveIntensity={0.6} />
+        <meshStandardMaterial color="#F97316" emissive="#F97316" emissiveIntensity={0.8} />
       </Text>
       <mesh>
         <icosahedronGeometry args={[0.12, 0]} />
