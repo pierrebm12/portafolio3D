@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { AdaptiveDpr, Text } from '@react-three/drei'
+import { AdaptiveDpr, useTexture } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Suspense } from 'react'
 import * as THREE from 'three'
@@ -145,9 +145,42 @@ function OrbitRing({ radius }) {
 
 function Sun() {
   const meshRef = useRef()
-  const textRef = useRef()
+  const spriteRef = useRef()
   const glowRef = useRef()
   const glowOuterRef = useRef()
+
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, 512, 256)
+
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    const drawGlow = (x, y, color) => {
+      ctx.shadowColor = color
+      ctx.shadowBlur = 30
+    }
+
+    ctx.shadowColor = '#F97316'
+    ctx.shadowBlur = 20
+    ctx.font = 'bold 120px "Anton", sans-serif'
+    ctx.fillStyle = '#F5EDD6'
+    ctx.fillText('DEV', 220, 135)
+
+    ctx.shadowColor = '#F97316'
+    ctx.shadowBlur = 30
+    ctx.fillStyle = '#F97316'
+    ctx.fillText('TRO', 330, 135)
+
+    ctx.shadowBlur = 0
+
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.needsUpdate = true
+    return tex
+  }, [])
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
@@ -156,10 +189,10 @@ function Sun() {
       meshRef.current.rotation.y += delta * 0.15
       meshRef.current.position.y = Math.sin(t * 0.3) * 0.08
     }
-    if (textRef.current) {
-      textRef.current.position.y = Math.sin(t * 0.4) * 0.06
+    if (spriteRef.current) {
+      spriteRef.current.position.y = Math.sin(t * 0.4) * 0.06
       const s = 1 + Math.sin(t * 0.2) * 0.02
-      textRef.current.scale.setScalar(s)
+      spriteRef.current.scale.setScalar(s)
     }
     if (glowRef.current) {
       const pulse = 0.7 + Math.sin(t * 0.5) * 0.3
@@ -189,39 +222,9 @@ function Sun() {
           metalness={0.1} roughness={0.6} transparent opacity={0.2}
         />
       </mesh>
-      <Text
-        ref={textRef}
-        font="/fonts/Anton-Regular.ttf"
-        position={[-0.3, 0, 0]}
-        fontSize={0.55}
-        color="#F5EDD6"
-        anchorX="right"
-        anchorY="middle"
-        fontWeight={400}
-        letterSpacing={0.04}
-        outlineWidth={0.02}
-        outlineColor="#F97316"
-        outlineOpacity={0.3}
-      >
-        DEV
-        <meshStandardMaterial color="#F5EDD6" emissive="#F5EDD6" emissiveIntensity={0.3} />
-      </Text>
-      <Text
-        position={[0.3, 0, 0]}
-        font="/fonts/Anton-Regular.ttf"
-        fontSize={0.55}
-        color="#F97316"
-        anchorX="left"
-        anchorY="middle"
-        fontWeight={400}
-        letterSpacing={0.04}
-        outlineWidth={0.02}
-        outlineColor="#F97316"
-        outlineOpacity={0.5}
-      >
-        TRO
-        <meshStandardMaterial color="#F97316" emissive="#F97316" emissiveIntensity={0.8} />
-      </Text>
+      <sprite ref={spriteRef} scale={[1.8, 0.9, 1]}>
+        <spriteMaterial map={texture} transparent depthWrite={false} depthTest={false} />
+      </sprite>
       <mesh>
         <icosahedronGeometry args={[0.12, 0]} />
         <meshBasicMaterial color="#F5EDD6" transparent opacity={0.2} />
