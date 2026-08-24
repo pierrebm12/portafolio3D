@@ -9,7 +9,7 @@ import { useDevice } from '../../utils/useDevice'
 function StarField() {
   const ref = useRef()
   const { isMobile } = useDevice()
-  const count = isMobile ? 600 : 1500
+  const count = isMobile ? 1200 : 1500
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
@@ -46,7 +46,7 @@ function StarField() {
 function FloatingParticles() {
   const ref = useRef()
   const { isMobile } = useDevice()
-  const count = isMobile ? 80 : 200
+  const count = isMobile ? 160 : 200
   const [positions, velocities] = useMemo(() => {
     const p = new Float32Array(count * 3)
     const v = new Float32Array(count * 3)
@@ -90,7 +90,7 @@ function Planet({ orbitRadius, size, color, emissive, speed, tilt = 0, offset = 
   const groupRef = useRef()
   const initialAngle = useRef(Math.random() * Math.PI * 2)
   const { isMobile } = useDevice()
-  const segs = isMobile ? 20 : 32
+  const segs = isMobile ? 28 : 32
 
   useFrame((state, delta) => {
     if (!groupRef.current) return
@@ -167,8 +167,8 @@ function Sun() {
     }
   })
 
-  const knotSegs = isMobile ? 48 : 96
-  const knotTubes = isMobile ? 8 : 16
+  const knotSegs = isMobile ? 72 : 96
+  const knotTubes = isMobile ? 12 : 16
 
   return (
     <group>
@@ -238,10 +238,10 @@ export default function HeroScene3D({ mouse }) {
     <div className="absolute inset-0 z-0">
       <Canvas
         camera={{ position: [0, 1.5, 7], fov: 50, near: 0.1, far: 40 }}
-        dpr={isMobile ? [0.6, 1.0] : [1, 1.5]}
+        dpr={isMobile ? [1, 1.2] : [1, 1.5]}
         gl={{
           alpha: true,
-          antialias: !isMobile,
+          antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.5,
           powerPreference: 'high-performance',
@@ -254,11 +254,9 @@ export default function HeroScene3D({ mouse }) {
           <directionalLight position={[-2, 1, -1]} intensity={0.25} color="#F5EDD6" />
           <pointLight position={[0, 0, 0]} intensity={2} color="#F97316" distance={15} decay={1.2} />
           <Universe mouse={mouse} />
-          {!isMobile && (
-            <EffectComposer>
-              <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.92} intensity={1.2} mipmapBlur />
-            </EffectComposer>
-          )}
+          <EffectComposer>
+            <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.92} intensity={1.2} mipmapBlur />
+          </EffectComposer>
           <AdaptiveDpr pixelated />
         </Suspense>
       </Canvas>
